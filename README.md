@@ -1,3 +1,15 @@
+SCP [WIP]
+=======
+The SCP driver is a virtual Xbox 360 joystick. Make sure it's installed, you can get it [here](http://forums.pcsx2.net/Thread-XInput-Wrapper-for-DS3-and-Play-com-USB-Dual-DS2-Controller).
+When using it, watch the types. leftTrigger and rightTrigger are byte's, all the thumb axes are short's. Giving these numbers larger than their maxes throws an exception.
+
+Todo:
+* Check [updated SCP](https://github.com/nefarius/ScpToolkit) (driver itself doesn't seem to be changed so doesn't matter).
+* Check what more is possible with SCP (by looking at the source code, for instance).
+    * For instance detecting whether a controller is already connected.
+    * FFB (rumble).
+* Check licensing before opening a merge request.
+
 FreePIE
 =======
 
