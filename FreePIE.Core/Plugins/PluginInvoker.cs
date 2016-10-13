@@ -20,7 +20,7 @@ namespace FreePIE.Core.Plugins
         private const string helpFolder = "help";
 
         private IEnumerable<Type> pluginTypes;
-        private IEnumerable<Type> globalEnumTypes; 
+        private IEnumerable<Type> globalEnumTypes;
 
         public PluginInvoker(ISettingsManager settingsManager, Func<Type, IPlugin> pluginFactory, IFileSystem fileSystem, IPaths paths)
         {
@@ -39,8 +39,8 @@ namespace FreePIE.Core.Plugins
             var dlls = fileSystem.GetFiles(path, "*.dll");
 
             pluginTypes = dlls
-                .Select(Assembly.LoadFile)
-                .SelectMany(a => a.GetTypes().Where(t => typeof (IPlugin).IsAssignableFrom(t) && t.IsClass && !t.IsAbstract)).ToList();
+                 .Select(Assembly.LoadFile)
+                 .SelectMany(a => a.GetTypes().Where(t => typeof(IPlugin).IsAssignableFrom(t) && t.IsClass && !t.IsAbstract)).ToList();
 
             return pluginTypes;
         }
@@ -62,8 +62,8 @@ namespace FreePIE.Core.Plugins
 
             removedPluginSettings.ForEach(ps => settings.PluginSettings.Remove(ps));
             settings.PluginSettings.AddRange(addedPluginTypes.Select(ps => new PluginSetting(ps.FullName)));
-            
-            foreach(var pluginType in pluginTypes)
+
+            foreach (var pluginType in pluginTypes)
             {
                 var plugin = pluginFactory(pluginType);
                 var pluginSettings = settings.PluginSettings.First(ps => ps.PluginType == pluginType.FullName);
@@ -73,7 +73,7 @@ namespace FreePIE.Core.Plugins
 
                 var helpFile = string.Format(@"{0}\{1}.rtf", paths.GetApplicationPath(helpFolder), pluginType.FullName);
 
-                if(fileSystem.Exists(helpFile))
+                if (fileSystem.Exists(helpFile))
                 {
                     pluginSettings.HelpFile = helpFile;
                 }
@@ -111,8 +111,7 @@ namespace FreePIE.Core.Plugins
                         property.Value = property.DefaultValue;
 
                     index++;
-                }
-                else
+                } else
                     properties.RemoveAt(index);
             }
             while (index < properties.Count || moreProperties);

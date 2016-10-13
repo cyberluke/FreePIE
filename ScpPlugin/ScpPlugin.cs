@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using FreePIE.Core.Contracts;
-using FreePIE.Core.Plugins.Globals;
 using SCP;
+using FreePIE.Core.Plugins.Globals;
 
 //plugin: takes care of indexing and lazy-creating
 //holder: does the actual interferencing with backend code
@@ -11,18 +11,20 @@ using SCP;
 namespace FreePIE.Core.Plugins
 {
     [GlobalType(Type = typeof(ScpGlobal), IsIndexed = true)]
-    public class ScpPlugin : Plugin
+    public class ScpPlugin : IPlugin
     {
         private List<ScpGlobalHolder> holders;
 
-        public override object CreateGlobal()
+        public event EventHandler Started;
+
+        public object CreateGlobal()
         {
             holders = new List<ScpGlobalHolder>();
 
             return new GlobalIndexer<ScpGlobal, uint>(Create);
         }
 
-        public override void Stop()
+        public void Stop()
         {
             holders.ForEach(h => h.Dispose());
         }
@@ -35,12 +37,27 @@ namespace FreePIE.Core.Plugins
             return holder.Global;
         }
 
-        public override void DoBeforeNextExecute()
+        public void DoBeforeNextExecute()
         {
             holders.ForEach(h => h.SendState());
         }
 
-        public override string FriendlyName
+        public Action Start()
+        {
+            return null;
+        }
+
+        public bool GetProperty(int index, IPluginProperty property)
+        {
+            return false;
+        }
+
+        public bool SetProperties(Dictionary<string, object> properties)
+        {
+            return false;
+        }
+
+        public string FriendlyName
         {
             get { return "X360 emulator (SCP)"; }
         }
@@ -55,7 +72,6 @@ namespace FreePIE.Core.Plugins
         {
             Index = index;
             Global = new ScpGlobal(this);
-            //setPressedStrategy = new SetPressedStrategy(b => SetButton(b, true), b => SetButton(b, false));
 
             if (index < 1 || index > 4)
                 throw new ArgumentException(string.Format("Illegal Xbox controller number: {0}", index));

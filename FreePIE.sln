@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.30501.0
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FreePIE.Console", "FreePIE.Console\FreePIE.Console.csproj", "{D0368562-09D1-4E6E-8BD3-C1138764971E}"
 EndProject
@@ -22,6 +22,7 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FreePIE.GUI", "FreePIE.GUI\FreePIE.GUI.csproj", "{EF29A2A3-A29C-4D9A-A8E2-A59925DEA82D}"
 	ProjectSection(ProjectDependencies) = postProject
 		{65D8F959-C4AD-4EC9-9EFA-9EBB9D8CA7CB} = {65D8F959-C4AD-4EC9-9EFA-9EBB9D8CA7CB}
+		{3CD8809D-B094-4E81-9B0F-E1AD9A9B7736} = {3CD8809D-B094-4E81-9B0F-E1AD9A9B7736}
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FreePIE.GUI.CodeCompletion", "FreePIE.GUI.CodeCompletion\FreePIE.GUI.CodeCompletion.csproj", "{8487DD8C-896C-4597-A377-5620DCA04C62}"
@@ -44,6 +45,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{40AC54
 		.nuget\NuGet.exe = .nuget\NuGet.exe
 		.nuget\NuGet.targets = .nuget\NuGet.targets
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScpPlugin", "ScpPlugin\ScpPlugin.csproj", "{3CD8809D-B094-4E81-9B0F-E1AD9A9B7736}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -145,6 +148,18 @@ Global
 		{8487DD8C-896C-4597-A377-5620DCA04C62}.Release|Mixed Platforms.Build.0 = Release|x86
 		{8487DD8C-896C-4597-A377-5620DCA04C62}.Release|x86.ActiveCfg = Release|x86
 		{8487DD8C-896C-4597-A377-5620DCA04C62}.Release|x86.Build.0 = Release|x86
+		{3CD8809D-B094-4E81-9B0F-E1AD9A9B7736}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3CD8809D-B094-4E81-9B0F-E1AD9A9B7736}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3CD8809D-B094-4E81-9B0F-E1AD9A9B7736}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{3CD8809D-B094-4E81-9B0F-E1AD9A9B7736}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{3CD8809D-B094-4E81-9B0F-E1AD9A9B7736}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{3CD8809D-B094-4E81-9B0F-E1AD9A9B7736}.Debug|x86.Build.0 = Debug|Any CPU
+		{3CD8809D-B094-4E81-9B0F-E1AD9A9B7736}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3CD8809D-B094-4E81-9B0F-E1AD9A9B7736}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3CD8809D-B094-4E81-9B0F-E1AD9A9B7736}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{3CD8809D-B094-4E81-9B0F-E1AD9A9B7736}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{3CD8809D-B094-4E81-9B0F-E1AD9A9B7736}.Release|x86.ActiveCfg = Release|Any CPU
+		{3CD8809D-B094-4E81-9B0F-E1AD9A9B7736}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
