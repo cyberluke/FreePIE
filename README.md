@@ -1,7 +1,7 @@
 SCP [WIP]
 =======
 The SCP driver is a virtual Xbox 360 joystick (and also DS reader). Make sure it's installed, you can get it [here](http://forums.pcsx2.net/Thread-XInput-Wrapper-for-DS3-and-Play-com-USB-Dual-DS2-Controller).
-When using it, watch the types. leftTrigger and rightTrigger are byte's, all the thumb axes are short's. Giving these numbers larger than their maxes throws an exception.
+When using it, watch the types. leftTrigger and rightTrigger are byte's, all the thumb axes are short's. Larger numbers will be truncated.
 
 Todo:
 * Check [updated SCP](https://github.com/nefarius/ScpToolkit) (driver itself doesn't seem to be changed so doesn't matter).
