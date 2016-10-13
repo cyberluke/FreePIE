@@ -43,12 +43,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="GlobalIndexer.cs" />
+    <Compile Include="..\FreePIE.Core.Plugins\Globals\GlobalIndexer.cs">
+      <Link>GlobalIndexer.cs</Link>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ScpPlugin.cs" />
-    <Compile Include="UsbDevice.cs" />
-    <Compile Include="XboxData.cs" />
-    <Compile Include="XboxDevice.cs" />
+    <Compile Include="SCP\DataStructures.cs" />
+    <Compile Include="SCP\UsbDevice.cs" />
+    <Compile Include="SCP\XboxDevice.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\FreePIE.Core.Contracts\FreePIE.Core.Contracts.csproj">
@@ -56,6 +58,7 @@
       <Name>FreePIE.Core.Contracts</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

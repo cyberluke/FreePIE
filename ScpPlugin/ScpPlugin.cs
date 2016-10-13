@@ -65,8 +65,7 @@ namespace FreePIE.Core.Plugins
 
     public class ScpGlobalHolder : IDisposable
     {
-        private XboxDevice controller;
-        public XboxState controllerState;
+        public XboxDevice controller;
 
         public ScpGlobalHolder(uint index)
         {
@@ -77,7 +76,6 @@ namespace FreePIE.Core.Plugins
                 throw new ArgumentException(string.Format("Illegal Xbox controller number: {0}", index));
 
             controller = new XboxDevice(index);
-            controllerState = controller.GetState();
             //will automatically throw the right exception when the driver isn't installed
         }
 
@@ -86,7 +84,7 @@ namespace FreePIE.Core.Plugins
 
         public void SendState()
         {
-            controller.Report(ref controllerState);
+            controller.Report();
         }
 
         public void Dispose()
@@ -107,44 +105,44 @@ namespace FreePIE.Core.Plugins
 
         public byte leftTrigger
         {
-            get { return holder.controllerState.LeftTrigger; }
-            set { holder.controllerState.LeftTrigger = value; }
+            get { return holder.controller.ControllerState.LeftTrigger; }
+            set { holder.controller.ControllerState.LeftTrigger = value; }
         }
 
         public byte rightTrigger
         {
-            get { return holder.controllerState.RightTrigger; }
-            set { holder.controllerState.RightTrigger = value; }
+            get { return holder.controller.ControllerState.RightTrigger; }
+            set { holder.controller.ControllerState.RightTrigger = value; }
         }
 
         public short leftX
         {
-            get { return holder.controllerState.ThumbLX; }
-            set { holder.controllerState.ThumbLX = value; }
+            get { return holder.controller.ControllerState.ThumbLX; }
+            set { holder.controller.ControllerState.ThumbLX = value; }
         }
 
         public short leftY
         {
-            get { return holder.controllerState.ThumbLY; }
-            set { holder.controllerState.ThumbLY = value; }
+            get { return holder.controller.ControllerState.ThumbLY; }
+            set { holder.controller.ControllerState.ThumbLY = value; }
         }
 
         public short rightX
         {
-            get { return holder.controllerState.ThumbRX; }
-            set { holder.controllerState.ThumbRX = value; }
+            get { return holder.controller.ControllerState.ThumbRX; }
+            set { holder.controller.ControllerState.ThumbRX = value; }
         }
 
         public short rightY
         {
-            get { return holder.controllerState.ThumbRY; }
-            set { holder.controllerState.ThumbRY = value; }
+            get { return holder.controller.ControllerState.ThumbRY; }
+            set { holder.controller.ControllerState.ThumbRY = value; }
         }
 
 
-        public void SetButton(ScpButton button, bool pressed)
+        public void SetButton(ScpButtonMask button, bool pressed)
         {
-            holder.controllerState[button] = pressed;
+            holder.controller.ControllerState[button] = pressed;
         }
     }
 }
