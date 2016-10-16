@@ -59,7 +59,7 @@ namespace FreePIE.Core.Plugins.VJoy
             {
                 Console.WriteLine("Forwarding {0} to all joystick(s) registered for vJoy device {1}", apd.packet.PacketType, apd.packet.DeviceId);
                 foreach (var dev in registeredDevices[apd.packet.DeviceId - 1])
-                    apd.action.action(dev, apd.convertedPacket);
+                    apd.action(dev, apd.convertedPacket);
             } catch (Exception e)
             {
                 Console.WriteLine("Excecption when trying to forward ffb packet {0}{1}{1}{2}", apd.packet.PacketType, Environment.NewLine, e.Message);

@@ -24,23 +24,21 @@ namespace FreePIE.Core.Plugins.VJoy
 
         public override IAsyncAction Convert(FfbPacket packet)
         {
-            T convertedPacket = packet.GetPacketData<T>();
-            Console.WriteLine(convertedPacket);
-            return new AsyncPacketData<T>(packet, convertedPacket, this);
+            return new AsyncPacketData<T>(action, packet);
         }
     }
-    public class AsyncPacketData<T> : IAsyncAction
+
+    public class AsyncPacketData<T> : PacketAction<T>, IAsyncAction
             where T : IFfbPacketData
     {
         public readonly FfbPacket packet;
         public readonly T convertedPacket;
-        public readonly PacketAction<T> action;
 
-        public AsyncPacketData(FfbPacket p, T cp, PacketAction<T> a)
+        public AsyncPacketData(Action<Device, T> a, FfbPacket p) : base(a)
         {
             packet = p;
-            convertedPacket = cp;
-            action = a;
+            convertedPacket = packet.GetPacketData<T>();
+            Console.WriteLine(convertedPacket);
         }
 
         public void Call()

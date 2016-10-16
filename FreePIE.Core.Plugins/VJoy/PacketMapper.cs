@@ -1,7 +1,5 @@
-﻿using FreePIE.Core.Plugins.Dx;
-using FreePIE.Core.Plugins.VJoy.PacketData;
+﻿using FreePIE.Core.Plugins.VJoy.PacketData;
 using System;
-using System.Collections.Generic;
 
 namespace FreePIE.Core.Plugins.VJoy
 {

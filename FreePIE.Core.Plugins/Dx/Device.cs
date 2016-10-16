@@ -165,7 +165,7 @@ namespace FreePIE.Core.Plugins.Dx
                     Effects[blockIndex].Start(loopCount, EffectPlayFlags.Solo);
                     break;
                 case EffectOperation.Stop:
-                    //Effects[blockIndex].Stop();
+                    Effects[blockIndex].Stop();
                     break;
             }
         }
@@ -228,7 +228,7 @@ namespace FreePIE.Core.Plugins.Dx
         {
             if (Effects[blockIndex] != null && Effects[blockIndex].Status == EffectStatus.Playing)
             {
-                //OperateEffect(blockIndex, EffectOperation.Stop, 0);
+                OperateEffect(blockIndex, EffectOperation.Stop, 0);
                 Effects[blockIndex].Dispose();
             }
         }
