@@ -48,7 +48,7 @@ namespace FreePIE.Core.Plugins.VJoy
         private static void OnFfbPacketAvailable(IntPtr ffbDataPtr, IntPtr userData)
         {
             FfbPacket ffbPacket = new FfbPacket(ffbDataPtr);
-            packetMapper.Apply(registeredDevices[ffbPacket.DeviceId - 1], ffbPacket);
+            packetMapper.Enqueue(registeredDevices[ffbPacket.DeviceId - 1], ffbPacket);
         }
 
         [DllImport("vJoyInterface.dll", EntryPoint = "FfbRegisterGenCB", CallingConvention = CallingConvention.Cdecl)]

@@ -4,20 +4,21 @@ using System.Threading;
 
 namespace FreePIE.Core.Plugins.VJoy
 {
-    public class AsyncActionRunner
+    public class AsyncActionRunner<T>
     {
-        private ConcurrentQueue<Action> queue;
-        private BlockingCollection<Action> queueWrapper;
-        private Thread asyncThread;
+        private readonly ConcurrentQueue<T> queue;
+        private readonly BlockingCollection<T> queueWrapper;
+        private readonly Thread asyncThread;
+
         public AsyncActionRunner()
         {
-            queue = new ConcurrentQueue<Action>();
-            queueWrapper = new BlockingCollection<Action>(queue);
+            queue = new ConcurrentQueue<T>();
+            queueWrapper = new BlockingCollection<T>(queue);
             asyncThread = new Thread(asyncThreadEntryPoint);
             asyncThread.Start();
         }
 
-        public void Enqueue(Action item)
+        public void Enqueue(T item)
         {
             queueWrapper.Add(item);
         }
@@ -26,7 +27,12 @@ namespace FreePIE.Core.Plugins.VJoy
         {
             while (true)
                 //"A call to Take may block until an item is available to be removed."
-                queueWrapper.Take()();
+                OnAsyncItem(queueWrapper.Take());
+        }
+
+        protected virtual void OnAsyncItem(T item)
+        {
+
         }
     }
 }

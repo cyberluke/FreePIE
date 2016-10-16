@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace FreePIE.Core.Plugins.VJoy
 {
-    public class PacketMapper
+    public class PacketMapper : AsyncActionRunner<AsyncPacketData>
     {
         private PacketAction[] mapArr;
         public PacketMapper()
@@ -21,13 +21,19 @@ namespace FreePIE.Core.Plugins.VJoy
             set { mapArr[(int)pt] = value; }
         }
 
-        public void Apply(IEnumerable<Device> devices, FfbPacket packet)
+        public void Enqueue(IEnumerable<Device> devices, FfbPacket packet)
         {
             var pa = this[packet.PacketType];
             if (pa != null)
-                pa.Apply(devices, packet);
+                Enqueue(pa.Convert(devices, packet));
             else
                 Console.Error.WriteLine("No packet action for {0}!", packet.PacketType);
+        }
+
+        protected override void OnAsyncItem(AsyncPacketData item)
+        {
+            var pa = this[item.packet.PacketType];
+            pa.Call(item);
         }
 
         private void SetupDefaultMap()
@@ -41,7 +47,7 @@ namespace FreePIE.Core.Plugins.VJoy
             this[PacketType.CustomForceData] = null;
             this[PacketType.DownloadForceSample] = null;
             this[PacketType.EffectOperation] = new PacketAction<EffectOperationPacket>((d, p) => d.OperateEffect(p.BlockIndex, p.Operation, p.LoopCount));
-            this[PacketType.PidBlockFree] = new PacketAction<BasePacket>((d, p) => d.DisposeEffect(p.BlockIndex));
+            this[PacketType.PidBlockFree] = null;// new PacketAction<BasePacket>((d, p) => d.DisposeEffect(p.BlockIndex));
             this[PacketType.PidDeviceControl] = new PacketAction<PIDDeviceControlPacket>(null);
             this[PacketType.DeviceGain] = new PacketAction<DeviceGainPacket>((d, p) => d.Gain = p.Gain);
             this[PacketType.SetCustomForce] = null;

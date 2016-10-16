@@ -5,10 +5,28 @@ using System.Collections.Generic;
 
 namespace FreePIE.Core.Plugins.VJoy
 {
+    public class AsyncPacketData
+    {
+        public FfbPacket packet;
+    }
+    public class AsyncPacketData<T> : AsyncPacketData
+        where T : IFfbPacketData
+    {
+        public T convertedPacket;
+        public IEnumerable<Device> devices;
+
+        public AsyncPacketData(FfbPacket p, T cp, IEnumerable<Device> d)
+        {
+            packet = p;
+            convertedPacket = cp;
+            devices = d;
+        }
+    }
+
     public abstract class PacketAction
     {
-        protected static AsyncActionRunner asyncRunner = new AsyncActionRunner();
-        public abstract void Apply(IEnumerable<Device> devices, FfbPacket packet);
+        public abstract AsyncPacketData Convert(IEnumerable<Device> devices, FfbPacket packet);
+        public abstract void Call(AsyncPacketData convertedPacket);
     }
 
     /// <summary>
@@ -24,34 +42,26 @@ namespace FreePIE.Core.Plugins.VJoy
             action = act;
         }
 
+        public override void Call(AsyncPacketData convertedPacket)
+        {
+            var cp = (AsyncPacketData<T>)convertedPacket;
+            try
+            {
+                Console.WriteLine("Forwarding {0} to all joystick(s) registered for vJoy device {1}", cp.packet.PacketType, cp.packet.DeviceId);
+                foreach (var dev in cp.devices)
+                    action(dev, cp.convertedPacket);
+            } catch (Exception e)
+            {
+                Console.WriteLine("Excecption when trying to forward ffb packet {0}{1}{1}{2}", cp.packet.PacketType, Environment.NewLine, e.Message);
+                //throw;
+            }
+        }
 
-        public override void Apply(IEnumerable<Device> devices, FfbPacket packet)
+        public override AsyncPacketData Convert(IEnumerable<Device> devices, FfbPacket packet)
         {
             T convertedPacket = packet.GetPacketData<T>();
             Console.WriteLine(convertedPacket);
-
-            //I'm not sure if running the actions async is needed. I do not own an FFB device, thus my only option is to try and forward from one vJoy device to another one, which causes everything to block when not done async. I do not know whether this is because of the inner workings of vJoy, or because of the inner workings of FFB.
-
-            //also, convertedPacket needs to be read out here, to prevent a race condition where the packet sender could've reused the memory of the packet already before it's read. Hence why that's done here (this function is called from the *blocking* ffb packet callback).
-
-            //continuously creating an action isn't that neat. This should be rewritten to have a single action stored inside AsyncActionRunner, which is called with parameters from the queue. Have to think about types/generics though.
-            //this function needs to know about "packet" (for printing information), "convertedPacket", "devices" and "action".
-
-            Action a = () =>
-            {
-                try
-                {
-                    Console.WriteLine("Forwarding {0} on all joystick(s) registered for vJoy device {1}", packet.PacketType, packet.DeviceId);
-                    if (action != null)
-                        foreach (var dev in devices)
-                            action(dev, convertedPacket);
-                } catch (Exception e)
-                {
-                    Console.WriteLine("Excecption when trying to forward ffb packet {0}{1}{1}{2}", packet.PacketType, Environment.NewLine, e.Message);
-                    //throw;
-                }
-            };
-            asyncRunner.Enqueue(a);
+            return new AsyncPacketData<T>(packet, convertedPacket, devices);
         }
     }
 }
