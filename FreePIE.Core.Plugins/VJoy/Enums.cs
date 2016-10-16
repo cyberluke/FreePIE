@@ -7,25 +7,31 @@ namespace FreePIE.Core.Plugins.VJoy
     [GlobalEnum]
     public enum PacketType : byte
     {
+        None = 0,
+
         // Write
-        Effect = 0x01,
-        Envelope = 0x02,
+        Effect = 0x1,
+        Envelope = 0x2,
         Condition = 0x3,
         Periodic = 0x4,
         ConstantForce = 0x5,
         RampForce = 0x6,
         CustomForceData = 0x7,
         DownloadForceSample = 0x8,
+        None2 = 0x9,
         EffectOperation = 0xA,
         PidBlockFree = 0xB,
         PidDeviceControl = 0xC,
         DeviceGain = 0xD,
         SetCustomForce = 0xE,
 
+        None3 = 0xF,
+        None4 = 0x10,
+
         // Feature
-        CreateNewEffect = 0x01 + 0x10,
-        BlockLoad = 0x02 + 0x10,
-        PIDPool = 0x03 + 0x10
+        CreateNewEffect = 0x1 + 0x10,
+        BlockLoad = 0x2 + 0x10,
+        PIDPool = 0x3 + 0x10
     }
 
     [GlobalEnum]

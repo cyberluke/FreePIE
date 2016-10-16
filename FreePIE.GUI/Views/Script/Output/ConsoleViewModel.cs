@@ -10,11 +10,11 @@ namespace FreePIE.GUI.Views.Script.Output
 {
     public class ConsoleViewModel : PanelViewModel
     {
-        private readonly ConsoleTextWriter consoleTextWriter;
+        private readonly AConsoleTextWriter consoleTextWriter;
 
         public ConsoleViewModel()
         {
-            consoleTextWriter = new ConsoleTextWriter(this);
+            consoleTextWriter = new InfiniteConsoleTextWriter(this);//Infinite
             Console.SetOut(consoleTextWriter);
 
             Title = "Console";
@@ -32,42 +32,86 @@ namespace FreePIE.GUI.Views.Script.Output
         public string Text
         {
             get { return text; }
-            set 
-            { 
-                text = value; 
+            set
+            {
+                text = value;
                 NotifyOfPropertyChange(() => Text);
                 NotifyOfPropertyChange(() => CanClear);
             }
         }
     }
 
-    public class ConsoleTextWriter : TextWriter
+    public abstract class AConsoleTextWriter : TextWriter
     {
-        private readonly ConsoleViewModel output;
-        private List<string> consoleStack;
-
-        public ConsoleTextWriter(ConsoleViewModel output)
+        protected readonly ConsoleViewModel output;
+        public AConsoleTextWriter(ConsoleViewModel output)
         {
             this.output = output;
-            consoleStack = new List<string>();
             var worker = new BackgroundWorker();
 
             worker.DoWork += WorkerDoWork;
             worker.RunWorkerAsync();
         }
 
-        private void WorkerDoWork(object sender, DoWorkEventArgs e)
+        public abstract void Clear();
+        protected abstract void WorkerDoWork(object sender, DoWorkEventArgs e);
+
+        public override Encoding Encoding
         {
-            while(true)
+            get { return Encoding.UTF8; }
+        }
+    }
+
+    public class InfiniteConsoleTextWriter : AConsoleTextWriter
+    {
+        private readonly StringBuilder sb = new StringBuilder();
+
+        public InfiniteConsoleTextWriter(ConsoleViewModel output) : base(output)
+        {
+        }
+
+        public override void Clear()
+        {
+            output.Text = null;
+            sb.Clear();
+        }
+
+        public override void WriteLine(string value)
+        {
+            sb.AppendLine(value);
+        }
+
+        protected override void WorkerDoWork(object sender, DoWorkEventArgs e)
+        {
+            while (true)
             {
-                if(consoleStack.Count > 0)
-                    output.Text = string.Join(Environment.NewLine, consoleStack.ToArray());
+                output.Text = sb.ToString();
+                Thread.Sleep(100);
+            }
+        }
+    }
+
+    public class ConsoleTextWriter : AConsoleTextWriter
+    {
+        private Queue<string> consoleStack;
+
+        public ConsoleTextWriter(ConsoleViewModel output) : base(output)
+        {
+            consoleStack = new Queue<string>();
+        }
+
+        protected override void WorkerDoWork(object sender, DoWorkEventArgs e)
+        {
+            while (true)
+            {
+                if (consoleStack.Count > 0)
+                    output.Text = string.Join(Environment.NewLine, consoleStack);
 
                 Thread.Sleep(100);
             }
         }
 
-        public void Clear()
+        public override void Clear()
         {
             output.Text = null;
             consoleStack.Clear();
@@ -75,16 +119,9 @@ namespace FreePIE.GUI.Views.Script.Output
 
         public override void WriteLine(string value)
         {
-            consoleStack.Add(value);
+            consoleStack.Enqueue(value);
             if (consoleStack.Count > 1000)
-            {
-                consoleStack.RemoveAt(0);
-            }
-        }
-
-        public override Encoding Encoding
-        {
-            get { return Encoding.UTF8; }
+                consoleStack.Dequeue();
         }
     }
 }

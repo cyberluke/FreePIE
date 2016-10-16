@@ -1,16 +1,14 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using FreePIE.Core.Contracts;
 using FreePIE.Core.Plugins.Globals;
-using FreePIE.Core.Plugins.Strategies;
-using FreePIE.Core.Plugins.VJoy;
 using SlimDX.DirectInput;
-using EffectType = FreePIE.Core.Plugins.VJoy.EffectType;
+using FreePIE.Core.Plugins.VJoy;
 using JoystickState = SlimDX.DirectInput.JoystickState;
 using Device = FreePIE.Core.Plugins.Dx.Device;
+using EffectType = FreePIE.Core.Plugins.VJoy.EffectType;
+using System.Collections;
 
 namespace FreePIE.Core.Plugins
 {
@@ -64,7 +62,7 @@ namespace FreePIE.Core.Plugins
             get { return "Joystick"; }
         }
     }
-    
+
     [Global(Name = "joystick")]
     public class JoystickGlobal
     {
@@ -77,7 +75,7 @@ namespace FreePIE.Core.Plugins
 
         private JoystickState State { get { return device.State; } }
 
-        internal Device Device {  get { return device; } }
+        internal Device Device { get { return device; } }
 
         public void setRange(int lowerRange, int upperRange)
         {
@@ -134,20 +132,22 @@ namespace FreePIE.Core.Plugins
             get { return State.GetPointOfViewControllers(); }
         }
 
-        /*    public bool AutoCenter
-            {
-                get { return device.AutoCenter; }
-                set { device.AutoCenter = value; }
-            }*/
+        public bool AutoCenter
+        {
+            get { return device.AutoCenter; }
+            set { device.AutoCenter = value; }
+        }
 
         public bool supportsFfb { get { return device.SupportsFfb; } }
-        public void createEffect(int blockIndex, EffectType effectType, int duration, IEnumerable dirs)
-        {
-            device.CreateEffect(blockIndex, effectType, duration, dirs.Cast<int>().ToArray());
-        }
+
         public void setConstantForce(int blockIndex, int magnitude)
         {
             device.SetConstantForce(blockIndex, magnitude);
+        }
+
+        public void createEffect(int blockIndex, EffectType effectType, int duration, IEnumerable<int> dirs)
+        {
+            device.CreateEffect(blockIndex, effectType, duration, dirs.ToArray());
         }
 
         public void operateEffect(int blockIndex, EffectOperation effectOperation, int loopCount = 0)

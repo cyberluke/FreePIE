@@ -20,20 +20,12 @@ namespace FreePIE.Core.Plugins.VJoy
 
         private readonly SetPressedStrategy setPressedStrategy;
 
-        private readonly List<Device> registeredFfbDevices = new List<Device>();
-        private static bool isWrapperRegistered = false;
-
         public bool FfbEnabled { get { return Joystick.IsDeviceFfb(Index); } }
 
         public void RegisterFfbDevice(Device dev)
         {
             if (!FfbEnabled) throw new NotSupportedException("This VJoy device does not have FFB enabled");
-            if (!isWrapperRegistered)
-            {
-                VJoyFfbWrap.OnFfbCallback += OnFfbCallback;
-                isWrapperRegistered = true;
-            }
-            registeredFfbDevices.Add(dev);
+            VJoyFfbWrap.RegisterDevice((int)Index, dev);
         }
 
         public VJoyGlobalHolder(uint index)
@@ -158,77 +150,6 @@ namespace FreePIE.Core.Plugins.VJoy
         public void Dispose()
         {
             Joystick.RelinquishVJD(Index);
-        }
-
-        private void OnFfbCallback(int deviceId, PacketType packetType, IntPtr dataPtr)
-        {
-            if (Index != deviceId)
-                return;
-            byte blockIndex = Marshal.ReadByte(dataPtr, 1);
-            Console.WriteLine("BlockIndex: {0}", blockIndex);
-
-            try
-            {
-                switch(packetType)
-                {
-                    case PacketType.Effect:
-                        EffectReport report = (EffectReport)Marshal.PtrToStructure(dataPtr, typeof(EffectReport));
-                        Console.WriteLine(report);
-                        registeredFfbDevices.ForEach(dev => dev.SetEffectParams(report));
-                        break;
-                    /*case PacketType.Envelope:
-                        break;
-                    case PacketType.Condition:
-                        break;
-                    case PacketType.Periodic:
-                        break;*/
-                    case PacketType.ConstantForce:
-                        short magnitude = Marshal.ReadInt16(dataPtr, 2);
-                        Console.WriteLine("Magnitude: {0}", magnitude);
-                        registeredFfbDevices.ForEach(dev => dev.SetConstantForce(blockIndex, magnitude));
-                        break;
-                    /*case PacketType.RampForce:
-                        break;
-                    case PacketType.CustomForceData:
-                        break;
-                    case PacketType.DownloadForceSample:
-                        break;*/
-                    case PacketType.EffectOperation:
-                        EffectOperation effOp = (EffectOperation)Marshal.ReadByte(dataPtr, 2);
-                        Console.WriteLine("EffectOperation: {0}", effOp);
-                        registeredFfbDevices.ForEach(dev => dev.OperateEffect(blockIndex, effOp, Marshal.ReadByte(dataPtr, 3)));
-                        break;
-                    case PacketType.PidBlockFree:
-                        Console.WriteLine("PID: Freeing block");
-                        registeredFfbDevices.ForEach(dev => dev.DisposeEffect(blockIndex));
-                        break;
-                    case PacketType.PidDeviceControl:
-                        Console.WriteLine("PIDDeviceControl: {0}", (PidDeviceControl)Marshal.ReadByte(dataPtr, 1));
-                        break;
-                    /*
-                case PacketType.DeviceGain:
-                    break;
-                case PacketType.SetCustomForce:
-                    break;*/
-                    case PacketType.CreateNewEffect:
-                        EffectType et = (EffectType)Marshal.ReadByte(dataPtr, 1);
-                        Console.WriteLine("Creating new effect {0}", et);
-                        registeredFfbDevices.ForEach(dev => dev.CreateNewEffect(blockIndex, et));
-                        break;
-                    /*  case PacketType.BlockLoad:
-                          break;
-                      case PacketType.PIDPool:
-                          break;*/
-                    default:
-                        Console.WriteLine("WARNING!!!!!! PACKET NOT HANDLED: {0}", packetType);
-                        break;
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Excecption when trying to forward ffb packetType {0}{1}{1}{2}", packetType, Environment.NewLine, e.Message);
-                throw;
-            }
         }
     }
 }
