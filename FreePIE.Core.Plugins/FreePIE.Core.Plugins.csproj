@@ -102,6 +102,7 @@
     <Compile Include="Midi\MidiStatus.cs" />
     <Compile Include="Midi\DataGlobal.cs" />
     <Compile Include="TobiiEyeXPlugin.cs" />
+    <Compile Include="VJoy\AsyncActionRunner.cs" />
     <Compile Include="VJoy\PacketAction.cs" />
     <Compile Include="VJoy\PacketData\ConstantForcePacket.cs" />
     <Compile Include="VJoy\PacketData\CreateNewEffectPacket.cs" />

@@ -33,7 +33,7 @@ namespace FreePIE.Core.Plugins.Dx
 
             SupportsFfb = joystick.Capabilities.Flags.HasFlag(DeviceFlags.ForceFeedback);
             if (SupportsFfb)
-                PrepareFFB();
+                PrepareFfb();
         }
 
         public JoystickState State
@@ -49,10 +49,8 @@ namespace FreePIE.Core.Plugins.Dx
         public void SetRange(int lowerRange, int upperRange)
         {
             foreach (DeviceObjectInstance deviceObject in joystick.GetObjects())
-            {
                 if ((deviceObject.ObjectType & ObjectDeviceType.Axis) != 0)
                     joystick.GetObjectPropertiesById((int)deviceObject.ObjectType).SetRange(lowerRange, upperRange);
-            }
         }
 
         public bool GetPressed(int button)
@@ -70,7 +68,7 @@ namespace FreePIE.Core.Plugins.Dx
             get { return joystick.Properties.AutoCenter; }
             set
             {
-                CheckFfbSupport("Can't set autoCenter");
+                CheckFfbSupport("Unable to set autoCenter");
                 joystick.Properties.AutoCenter = value;
             }
         }
@@ -80,7 +78,7 @@ namespace FreePIE.Core.Plugins.Dx
             get { return joystick.Properties.ForceFeedbackGain; }
             set
             {
-                CheckFfbSupport("Can't set gain");
+                CheckFfbSupport("Unable to set gain");
                 joystick.Properties.ForceFeedbackGain = value;
             }
         }
@@ -88,51 +86,19 @@ namespace FreePIE.Core.Plugins.Dx
         private void CheckFfbSupport(string message)
         {
             if (!SupportsFfb)
-                throw new Exception(message + " - this device does not support FFB");
+                throw new NotSupportedException(message + " - this device does not support FFB.");
         }
 
-        private void PrepareFFB()
+        private void PrepareFfb()
         {
             List<int> ax = new List<int>();
             foreach (DeviceObjectInstance deviceObject in joystick.GetObjects())
-            {
                 if ((deviceObject.ObjectType & ObjectDeviceType.ForceFeedbackActuator) != 0)
-                {
                     ax.Add((int)deviceObject.ObjectType);
-                }
-            }
             Axes = ax.ToArray();
         }
 
-        /// <summary>
-        /// Creates a simple effect and instantly initializes it with EffectParameters
-        /// </summary>
-        public void CreateEffect(int blockIndex, EffectType effectType, int duration, int[] dirs)
-        {
-            CheckFfbSupport("CreateEffect");
-
-            effectParams[blockIndex] = new EffectParameters()
-            {
-                Duration = duration,
-                Flags = EffectFlags.Cartesian | EffectFlags.ObjectIds,
-                Gain = 10000,
-                SamplePeriod = 0,
-                StartDelay = 0,
-                TriggerButton = -1,
-                TriggerRepeatInterval = 0,
-                Envelope = null
-            };
-            effectParams[blockIndex].SetAxes(Axes, dirs);
-
-            effectParams[blockIndex].Parameters = GetTypeSpecificParameter(effectType);
-
-            try
-            {
-                Effects[blockIndex] = new Effect(joystick, EffectTypeGuidMap(effectType), effectParams[blockIndex]);
-            } catch (Exception e) { throw new Exception("Unable to create effect: " + e.Message, e); }
-        }
-
-        public void SetEffectParams(EffectReportPacket effectReport)
+        public void SetEffectParams(EffectReportPacket er)
         {
             //This function is supposed to be a combination for multiple packets, because those packets are received in an unusual order (this is what I observed after testing with custom FFB code and games):
             //- CreateNewEffect, which only contains an EffectType (so, techincally one could create the Effect already since only the type needs to be known, but has no idea in which block to put it)
@@ -143,75 +109,41 @@ namespace FreePIE.Core.Plugins.Dx
 
             //Also, from my testing, when new Effect is called no packets were sent, all above 3 were sent all at once when SetParamters was called (or, when new Effect was called with EffectParameters, obviously). Meaning that there's no real advantage to calling new Effect early.
 
-            CheckFfbSupport("Can't create effect");
+            //angle is in 100th degrees, so if you want to express 90 degrees (vector pointing to the right) you'll have to enter 9000
+            var directions = er.Polar ? new int[] { er.AngleInDegrees * 100, 0 } : new int[] { er.DirectionX, er.DirectionY };
+            CreateEffect(er.BlockIndex, er.EffectType, er.Polar, directions, er.Duration, er.Gain * 39, er.SamplePeriod, 0);//, er.TriggerBtn, er.TriggerRepeatInterval);
+        }
 
-            int idx = effectReport.BlockIndex;
+        public void CreateEffect(int blockIndex, EffectType effectType, bool polar, int[] dirs, int duration = -1, int gain = 10000, int samplePeriod = 0, int startDelay = 0, int triggerButton = -1, int triggerRepeatInterval = 0)
+        {
+            CheckFfbSupport("Unable to create effect");
 
-            if (Effects[idx] == null)
-                throw new Exception("No effect has been created yet! Has CreateNewEffect been called?");
-
-            //first, create EffectParameters and fill it
-            effectParams[idx] = new EffectParameters()
+            effectParams[blockIndex] = new EffectParameters()
             {
-                Duration = effectReport.Duration,
-                Flags = EffectFlags.ObjectIds,
-                Gain = effectReport.Gain * 39,
-                SamplePeriod = effectReport.SamplePeriod, //test this. Without vJoy it worked (iirc) with a value of 0. Spintires uses 0 as well, but FFBInspector has -1 as default. Can also use joystick.Capabilities.ForceFeedbackSamplePeriod
-                StartDelay = 0,//TODO use data from effectReport
-                TriggerButton = -1,
-                TriggerRepeatInterval = 0,
+                Duration = duration,
+                Flags = EffectFlags.ObjectIds | (polar ? EffectFlags.Polar : EffectFlags.Cartesian),
+                Gain = gain,
+                SamplePeriod = samplePeriod,
+                StartDelay = startDelay,
+                TriggerButton = triggerButton,
+                TriggerRepeatInterval = triggerRepeatInterval,
                 Envelope = null
             };
 
-            //watch the incoming angle type. Both can be outputted, works just fine (and vJoy only receives Polar coordinates, so somewhere internally a conversion is made when Cartesian data is sent).
-            if (effectReport.Polar)
-            {
-                effectParams[idx].Flags |= EffectFlags.Polar;
-                //angle is in 100th degrees, so if you want to express 90 degrees (vector pointing to the right) you'll have to enter 9000
-                effectParams[idx].SetAxes(Axes, new int[] { effectReport.AngleInDegrees * 100, 0 });
-            } else
-            {
-                effectParams[idx].Flags |= EffectFlags.Cartesian;
-                effectParams[idx].SetAxes(Axes, new int[] { effectReport.DirectionX, effectReport.DirectionY });
-            }
+            effectParams[blockIndex].SetAxes(Axes, dirs);
 
-            //Construct empty TypeSpecificParameters (without, SetParameters throws an exception)
-            effectParams[idx].Parameters = GetTypeSpecificParameter(effectReport.EffectType);
-
-            try
-            {
-                //Create new effect if it doesn't exist yet.
-                var g = EffectTypeGuidMap(effectReport.EffectType);
-                if (Effects[idx] == null || Effects[idx].Disposed)
-                    Effects[idx] = new Effect(joystick, g);
-                else if (Effects[idx].Guid != g)
-                {
-                    Effects[idx].Dispose();
-                    Effects[idx] = new Effect(joystick, g);
-                }
-
-                //Always set parameters on it (because it hasn't been done in the constructor.
-                Effects[idx].SetParameters(effectParams[idx], EffectParameterFlags.All);
-            } catch (Exception e)
-            {
-                throw new Exception("Unable to set effect parameter: " + e.Message, e);
-            }
+            CreateEffect(blockIndex, effectType);
         }
 
         public void SetConstantForce(int blockIndex, int magnitude)
         {
-            CheckFfbSupport("Can't set constant force");
+            CheckFfbSupport("Unable to set constant force");
 
             if (Effects[blockIndex] == null)
-                //As discussed in the SetEffectParams method, Set<EffectType> is called before an effect is created. So, instead of throwing an exception it just needs to ignore, for now.
-
+                //As discussed in the SetEffectParams method, Set<EffectType> is called before an effect is created. So, instead of throwing an exception, just ignore.
                 return;// throw new Exception("No effect has been created in block " + blockIndex);
 
-            if (effectParams[blockIndex].Parameters == null)
-                effectParams[blockIndex].Parameters = new ConstantForce();
-
             effectParams[blockIndex].Parameters.AsConstantForce().Magnitude = magnitude;
-
             Effects[blockIndex].SetParameters(effectParams[blockIndex], EffectParameterFlags.TypeSpecificParameters);
         }
 
@@ -219,7 +151,7 @@ namespace FreePIE.Core.Plugins.Dx
 
         public void OperateEffect(int blockIndex, EffectOperation effectOperation, int loopCount = 0)
         {
-            CheckFfbSupport("Can't operate effect");
+            CheckFfbSupport("Unable to operate effect");
 
             if (Effects[blockIndex] == null)
                 throw new Exception("No effect has been created in block " + blockIndex);
@@ -238,13 +170,39 @@ namespace FreePIE.Core.Plugins.Dx
             }
         }
 
+        #region FFB helper functions
+
+        /// <summary>
+        /// Sets empty TypeSpecificParameters, and determines whether the current effect may need to be disposed
+        /// </summary>
+        /// <param name="blockIndex"></param>
+        /// <param name="type">The <see cref="EffectType"/> to create an effect for</param>
+        private void CreateEffect(int blockIndex, EffectType type)
+        {
+            //Construct empty TypeSpecificParameters (without, SetParameters throws an exception)
+            effectParams[blockIndex].Parameters = GetTypeSpecificParameter(type);
+
+            //if an effect already exists, dispose it (do not attempt to check whether it's still valid and use SetParameters(.., EffectParameterFlags.All), because that'll crash.
+            if (Effects[blockIndex] != null && !Effects[blockIndex].Disposed)
+                Effects[blockIndex].Dispose();
+
+            try
+            {
+                Effects[blockIndex] = new Effect(joystick, GetEffectGuid(type), effectParams[blockIndex]);
+            } catch (Exception e)
+            {
+                throw new Exception("Unable to create new effect: " + e.Message, e);
+            }
+        }
         private Guid GetEffectGuid(EffectType et)
         {
             Guid effectGuid = EffectTypeGuidMap(et);
-            if (!joystick.GetEffects().Select(effectInfo => effectInfo.Guid).Contains(effectGuid))
+            if (!joystick.GetEffects().Any(effectInfo => effectInfo.Guid == effectGuid))
                 throw new Exception(string.Format("Joystick doesn't support {0}!", et));
             return effectGuid;
         }
+
+        #endregion
 
         #region dispose functions
         public void Dispose()
