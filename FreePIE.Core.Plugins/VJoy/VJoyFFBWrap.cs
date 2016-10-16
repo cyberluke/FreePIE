@@ -1,4 +1,5 @@
 ﻿using FreePIE.Core.Plugins.Dx;
+using FreePIE.Core.Plugins.VJoy.PacketData;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -48,7 +49,22 @@ namespace FreePIE.Core.Plugins.VJoy
         private static void OnFfbPacketAvailable(IntPtr ffbDataPtr, IntPtr userData)
         {
             FfbPacket ffbPacket = new FfbPacket(ffbDataPtr);
-            packetMapper.Enqueue(registeredDevices[ffbPacket.DeviceId - 1], ffbPacket);
+            packetMapper.Enqueue(ffbPacket);
+        }
+
+        public static void ExecuteOnRegisteredDevices<T>(AsyncPacketData<T> apd)
+            where T : IFfbPacketData
+        {
+            try
+            {
+                Console.WriteLine("Forwarding {0} to all joystick(s) registered for vJoy device {1}", apd.packet.PacketType, apd.packet.DeviceId);
+                foreach (var dev in registeredDevices[apd.packet.DeviceId - 1])
+                    apd.action.action(dev, apd.convertedPacket);
+            } catch (Exception e)
+            {
+                Console.WriteLine("Excecption when trying to forward ffb packet {0}{1}{1}{2}", apd.packet.PacketType, Environment.NewLine, e.Message);
+                //throw;
+            }
         }
 
         [DllImport("vJoyInterface.dll", EntryPoint = "FfbRegisterGenCB", CallingConvention = CallingConvention.Cdecl)]

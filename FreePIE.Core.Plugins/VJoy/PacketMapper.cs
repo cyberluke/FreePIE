@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace FreePIE.Core.Plugins.VJoy
 {
-    public class PacketMapper : AsyncActionRunner<AsyncPacketData>
+    public class PacketMapper : AsyncActionRunner<IAsyncAction>
     {
         private PacketAction[] mapArr;
         public PacketMapper()
@@ -21,19 +21,13 @@ namespace FreePIE.Core.Plugins.VJoy
             set { mapArr[(int)pt] = value; }
         }
 
-        public void Enqueue(IEnumerable<Device> devices, FfbPacket packet)
+        public void Enqueue(FfbPacket packet)
         {
             var pa = this[packet.PacketType];
             if (pa != null)
-                Enqueue(pa.Convert(devices, packet));
+                Enqueue(pa.Convert(packet));
             else
                 Console.Error.WriteLine("No packet action for {0}!", packet.PacketType);
-        }
-
-        protected override void OnAsyncItem(AsyncPacketData item)
-        {
-            var pa = this[item.packet.PacketType];
-            pa.Call(item);
         }
 
         private void SetupDefaultMap()

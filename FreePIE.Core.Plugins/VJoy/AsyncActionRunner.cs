@@ -4,7 +4,12 @@ using System.Threading;
 
 namespace FreePIE.Core.Plugins.VJoy
 {
+    public interface IAsyncAction
+    {
+        void Call();
+    }
     public class AsyncActionRunner<T>
+        where T : IAsyncAction
     {
         private readonly ConcurrentQueue<T> queue;
         private readonly BlockingCollection<T> queueWrapper;
@@ -27,12 +32,7 @@ namespace FreePIE.Core.Plugins.VJoy
         {
             while (true)
                 //"A call to Take may block until an item is available to be removed."
-                OnAsyncItem(queueWrapper.Take());
-        }
-
-        protected virtual void OnAsyncItem(T item)
-        {
-
+                queueWrapper.Take().Call();
         }
     }
 }
