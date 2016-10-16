@@ -114,7 +114,6 @@
     <Compile Include="VJoy\VJoyGlobalHolder.cs" />
     <Compile Include="VJoy\PacketData\EffectReportPacket.cs" />
     <Compile Include="VJoy\Enums.cs" />
-    <Compile Include="VJoy\Extensions.cs" />
     <Compile Include="VJoy\FfbPacket.cs" />
     <Compile Include="VJoy\VJoyFFBWrap.cs" />
     <Compile Include="Wiimote\Calibratable.cs" />
