@@ -67,6 +67,15 @@ namespace FreePIE.Core.Plugins.VJoy
             }
         }
 
+        /// <summary>
+        /// Unregisters all devices
+        /// </summary>
+        public static void Reset()
+        {
+            for (int i = 0; i < registeredDevices.Length; i++)
+                registeredDevices[i].Clear();
+        }
+
         [DllImport("vJoyInterface.dll", EntryPoint = "FfbRegisterGenCB", CallingConvention = CallingConvention.Cdecl)]
         private extern static void _FfbRegisterGenCB(FfbPacketAvailable callback, IntPtr data);
     }

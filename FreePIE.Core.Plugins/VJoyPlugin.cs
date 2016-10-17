@@ -33,6 +33,7 @@ namespace FreePIE.Core.Plugins
         public override void Stop()
         {
             holders.ForEach(h => h.Dispose());
+            VJoyFfbWrap.Reset();
         }
 
         private VJoyGlobal Create(uint index)
