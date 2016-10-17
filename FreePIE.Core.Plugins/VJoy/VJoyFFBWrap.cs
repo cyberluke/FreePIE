@@ -1,8 +1,8 @@
 ﻿using FreePIE.Core.Plugins.Dx;
-using FreePIE.Core.Plugins.VJoy.PacketData;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Collections.Concurrent;
 
 namespace FreePIE.Core.Plugins.VJoy
 {
@@ -10,10 +10,18 @@ namespace FreePIE.Core.Plugins.VJoy
     {
 
         private delegate void FfbPacketAvailable(IntPtr returnedData, IntPtr userData);
-        private static PacketMapper packetMapper = new PacketMapper();
         private static FfbPacketAvailable wrapper;
         private static bool isRegistered;
+
+        private static readonly PacketMapper packetMapper = new PacketMapper();
         private static readonly HashSet<Device>[] registeredDevices = new HashSet<Device>[16];
+        private static readonly ConcurrentQueue<IAction<IList<IEnumerable<Device>>>> queue = new ConcurrentQueue<IAction<IList<IEnumerable<Device>>>>();
+        private static readonly BlockingCollection<IAction<IList<IEnumerable<Device>>>> queueWrapper;
+
+        static VJoyFfbWrap()
+        {
+            queueWrapper = new BlockingCollection<IAction<IList<IEnumerable<Device>>>>(queue);
+        }
 
         /// <summary>
         /// Registers a joystick for receiving packets from a vJoy device.
@@ -49,22 +57,23 @@ namespace FreePIE.Core.Plugins.VJoy
         private static void OnFfbPacketAvailable(IntPtr ffbDataPtr, IntPtr userData)
         {
             FfbPacket ffbPacket = new FfbPacket(ffbDataPtr);
-            packetMapper.Enqueue(ffbPacket);
+            var pa = packetMapper[ffbPacket.PacketType];
+            if (pa != null)
+            {
+                var p = pa.Convert(ffbPacket);
+                //XXX: later on, it would be better to only have a packetAction if there's also an action assigned with it. Currently there's packetActions without an action, just to at least convert the packet and log it.
+                if (p != null)
+                    queueWrapper.Add(p);
+            } else
+                Console.Error.WriteLine("No packet action for {0}!", ffbPacket.PacketType);
+
         }
 
-        public static void ExecuteOnRegisteredDevices<T>(AsyncPacketData<T> apd)
-            where T : IFfbPacketData
+        public static void HandleQueuedPackets()
         {
-            try
-            {
-                Console.WriteLine("Forwarding {0} to all joystick(s) registered for vJoy device {1}", apd.packet.PacketType, apd.packet.DeviceId);
-                foreach (var dev in registeredDevices[apd.packet.DeviceId - 1])
-                    apd.action(dev, apd.convertedPacket);
-            } catch (Exception e)
-            {
-                Console.WriteLine("Excecption when trying to forward ffb packet {0}{1}{1}{2}", apd.packet.PacketType, Environment.NewLine, e.Message);
-                //throw;
-            }
+            IAction<IList<IEnumerable<Device>>> action = null;
+            while (queueWrapper.TryTake(out action))
+                action.Call(registeredDevices);
         }
 
         /// <summary>
@@ -73,7 +82,7 @@ namespace FreePIE.Core.Plugins.VJoy
         public static void Reset()
         {
             for (int i = 0; i < registeredDevices.Length; i++)
-                registeredDevices[i].Clear();
+                registeredDevices[i]?.Clear();
         }
 
         [DllImport("vJoyInterface.dll", EntryPoint = "FfbRegisterGenCB", CallingConvention = CallingConvention.Cdecl)]

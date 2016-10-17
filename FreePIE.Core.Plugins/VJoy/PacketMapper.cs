@@ -3,7 +3,7 @@ using System;
 
 namespace FreePIE.Core.Plugins.VJoy
 {
-    public class PacketMapper : AsyncActionRunner<IAsyncAction>
+    public class PacketMapper
     {
         private PacketAction[] mapArr;
         public PacketMapper()
@@ -17,15 +17,6 @@ namespace FreePIE.Core.Plugins.VJoy
         {
             get { return mapArr[(int)pt]; }
             set { mapArr[(int)pt] = value; }
-        }
-
-        public void Enqueue(FfbPacket packet)
-        {
-            var pa = this[packet.PacketType];
-            if (pa != null)
-                Enqueue(pa.Convert(packet));
-            else
-                Console.Error.WriteLine("No packet action for {0}!", packet.PacketType);
         }
 
         private void SetupDefaultMap()

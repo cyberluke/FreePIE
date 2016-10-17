@@ -8,7 +8,6 @@ using FreePIE.Core.Plugins.VJoy;
 using JoystickState = SlimDX.DirectInput.JoystickState;
 using Device = FreePIE.Core.Plugins.Dx.Device;
 using EffectType = FreePIE.Core.Plugins.VJoy.EffectType;
-using System.Collections;
 
 namespace FreePIE.Core.Plugins
 {
