@@ -21,6 +21,7 @@ namespace FreePIE.Core.Plugins.VJoy
 
         private void SetupDefaultMap()
         {
+            //XXX: For now, PacketAction's can have an empty action, for the sole purpose of converting and printing them out as debug. However, once that's not needed anymore these should be removed to prevent the overhead of unnecessary converting/enqueueing.
             this[PacketType.Effect] = new PacketAction<EffectReportPacket>((d, p) => d.SetEffectParams(p));
             this[PacketType.Envelope] = null;
             this[PacketType.Condition] = null;
@@ -30,7 +31,7 @@ namespace FreePIE.Core.Plugins.VJoy
             this[PacketType.CustomForceData] = null;
             this[PacketType.DownloadForceSample] = null;
             this[PacketType.EffectOperation] = new PacketAction<EffectOperationPacket>((d, p) => d.OperateEffect(p.BlockIndex, p.Operation, p.LoopCount));
-            this[PacketType.PidBlockFree] = null;// new PacketAction<BasePacket>((d, p) => d.DisposeEffect(p.BlockIndex));
+            this[PacketType.PidBlockFree] = new PacketAction<BasePacket>((d, p) => d.DisposeEffect(p.BlockIndex));
             this[PacketType.PidDeviceControl] = new PacketAction<PIDDeviceControlPacket>(null);
             this[PacketType.DeviceGain] = new PacketAction<DeviceGainPacket>((d, p) => d.Gain = p.Gain);
             this[PacketType.SetCustomForce] = null;

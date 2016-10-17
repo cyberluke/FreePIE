@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using FreePIE.Core.Contracts;
 using FreePIE.Core.Plugins.Globals;
-using FreePIE.Core.Plugins.Strategies;
 using FreePIE.Core.Plugins.VJoy;
-using vJoyInterfaceWrap;
 
 namespace FreePIE.Core.Plugins
 {

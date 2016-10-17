@@ -221,17 +221,13 @@ namespace FreePIE.Core.Plugins.Dx
                 foreach (var e in joystick.CreatedEffects)
                     e.Dispose();
             }
-
         }
 
         public void DisposeEffect(int blockIndex)
         {
-            if (Effects[blockIndex] != null && Effects[blockIndex].Status == EffectStatus.Playing)
-            {
-                OperateEffect(blockIndex, EffectOperation.Stop, 0);
-                Effects[blockIndex].Dispose();
-            }
+            Effects[blockIndex]?.Dispose();
         }
+        
         #endregion
 
         #region mapping functions

@@ -15,12 +15,12 @@ namespace FreePIE.Core.Plugins.VJoy
 
         private static readonly PacketMapper packetMapper = new PacketMapper();
         private static readonly HashSet<Device>[] registeredDevices = new HashSet<Device>[16];
-        private static readonly ConcurrentQueue<IAction<IList<IEnumerable<Device>>>> queue = new ConcurrentQueue<IAction<IList<IEnumerable<Device>>>>();
-        private static readonly BlockingCollection<IAction<IList<IEnumerable<Device>>>> queueWrapper;
+        private static readonly ConcurrentQueue<IAction<IList<ICollection<Device>>>> queue = new ConcurrentQueue<IAction<IList<ICollection<Device>>>>();
+        private static readonly BlockingCollection<IAction<IList<ICollection<Device>>>> queueWrapper;
 
         static VJoyFfbWrap()
         {
-            queueWrapper = new BlockingCollection<IAction<IList<IEnumerable<Device>>>>(queue);
+            queueWrapper = new BlockingCollection<IAction<IList<ICollection<Device>>>>(queue);
         }
 
         /// <summary>
@@ -59,19 +59,14 @@ namespace FreePIE.Core.Plugins.VJoy
             FfbPacket ffbPacket = new FfbPacket(ffbDataPtr);
             var pa = packetMapper[ffbPacket.PacketType];
             if (pa != null)
-            {
-                var p = pa.Convert(ffbPacket);
-                //XXX: later on, it would be better to only have a packetAction if there's also an action assigned with it. Currently there's packetActions without an action, just to at least convert the packet and log it.
-                if (p != null)
-                    queueWrapper.Add(p);
-            } else
-                Console.Error.WriteLine("No packet action for {0}!", ffbPacket.PacketType);
-
+                queueWrapper.Add(pa.Convert(ffbPacket));
+            else
+                Console.WriteLine("No packet action for {0}", ffbPacket.PacketType);
         }
 
         public static void HandleQueuedPackets()
         {
-            IAction<IList<IEnumerable<Device>>> action = null;
+            IAction<IList<ICollection<Device>>> action = null;
             while (queueWrapper.TryTake(out action))
                 action.Call(registeredDevices);
         }
