@@ -127,7 +127,7 @@ namespace FreePIE.Core.Plugins.Dx
             effectParams[blockIndex] = new EffectParameters()
             {
                 Duration = duration,
-                Flags = EffectFlags.ObjectIds | (polar ? EffectFlags.Polar : EffectFlags.Cartesian),
+                Flags = EffectFlags.ObjectIds | EffectFlags.Cartesian, //(polar ? EffectFlags.Polar : EffectFlags.Cartesian),
                 Gain = gain,
                 SamplePeriod = samplePeriod,
                 StartDelay = startDelay,
@@ -135,6 +135,19 @@ namespace FreePIE.Core.Plugins.Dx
                 TriggerRepeatInterval = triggerRepeatInterval,
                 Envelope = null
             };
+
+            // Convert polar to cartesian cöordinates.
+            if (polar)
+            {
+                double pa = dirs[0] * Math.PI / 18000d;
+                // Convert to actual polar coordinates:
+                // FFB polar coordinates have 0degrees pointing to the north, and go clockwise, whereas 'real', mathematic polar coordinates point to the east and go counterclockwise
+                pa = 0.5 * Math.PI - pa;
+                // For being a direction, scale of x and y should not matter as long as they are in the same proportions relative to eachother (couldn't find anything in the spec though....). Might need to increase the 1000 constant to get a more precise number though...
+                dirs[0] = (int)(Math.Cos(pa) * 1000); // x-axis
+                if (dirs.Length > 1)
+                    dirs[1] = Axes.Length > 1 ? (int)(Math.Sin(pa) * 1000) : 0; // y-axis, if it exists
+            }
 
             effectParams[blockIndex].SetAxes(Axes, dirs);
 

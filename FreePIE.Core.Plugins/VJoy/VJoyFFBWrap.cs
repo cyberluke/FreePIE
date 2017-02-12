@@ -61,8 +61,8 @@ namespace FreePIE.Core.Plugins.VJoy
             var pa = packetMapper[ffbPacket.PacketType];
             if (pa != null)
                 queueWrapper.Add(pa.Convert(ffbPacket));
-            else
-                Console.WriteLine("No packet action for {0}", ffbPacket.PacketType);
+            //else
+            //Console.WriteLine("No packet action for {0}", ffbPacket.PacketType);
         }
 
         public static void HandleQueuedPackets()
@@ -77,8 +77,8 @@ namespace FreePIE.Core.Plugins.VJoy
         /// </summary>
         public static void Reset()
         {
-            for (int i = 0; i < registeredDevices.Length; i++)
-                registeredDevices[i]?.Clear();
+            foreach (var rd in registeredDevices)
+                rd?.Clear();
         }
 
         [DllImport("vJoyInterface.dll", EntryPoint = "FfbRegisterGenCB", CallingConvention = CallingConvention.Cdecl)]
