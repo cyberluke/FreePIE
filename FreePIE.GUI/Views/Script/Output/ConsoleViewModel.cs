@@ -14,7 +14,7 @@ namespace FreePIE.GUI.Views.Script.Output
 
         public ConsoleViewModel()
         {
-            consoleTextWriter = new InfiniteConsoleTextWriter(this);//Infinite
+            consoleTextWriter = new ConsoleTextWriter(this);//Infinite
             Console.SetOut(consoleTextWriter);
 
             Title = "Console";
