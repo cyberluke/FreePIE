@@ -33,7 +33,8 @@ namespace FreePIE.Core.Plugins.VJoy
             RegisterBaseCallback();
             if (registeredDevices[vJoyIdx - 1] == null)
                 registeredDevices[vJoyIdx - 1] = new HashSet<Device>();
-            registeredDevices[vJoyIdx - 1].Add(dev);
+            if (!registeredDevices[vJoyIdx - 1].Add(dev))
+                Console.WriteLine("That device has already been registered!");
         }
 
         /// <summary>

@@ -12,9 +12,15 @@ namespace FreePIE.Core.Plugins.VJoy.PacketData
         [FieldOffset(2)]
         public byte Gain;
 
+        public int NormalizedGain
+        {
+            // Gain as expected by DirectInput: ranging from 0 to 10000
+            get { return Gain * 10000 / 255; }
+        }
+
         public override string ToString()
         {
-            return string.Format("Gain: {0}", Gain);
+            return string.Format("Gain: {0}", NormalizedGain);
         }
     }
 }

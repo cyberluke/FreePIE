@@ -48,7 +48,7 @@ namespace FreePIE.Core.Plugins
 
         public override void Stop()
         {
-            devices.ForEach(d => d.Dispose());
+            devices.ForEach(d => d.Stop());
         }
 
         public override void DoBeforeNextExecute()

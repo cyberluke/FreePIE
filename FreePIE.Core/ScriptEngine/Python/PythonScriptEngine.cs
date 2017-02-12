@@ -175,7 +175,7 @@ namespace FreePIE.Core.ScriptEngine.Python
                 }
                 scope.SetVariable("stopping", true);
                 CatchThreadAbortedException(() => compiled.Execute(scope));
-            });
+            }, true);
         }
 
         ICollection<string> GetPythonPaths()

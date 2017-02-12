@@ -6,6 +6,8 @@ using SlimDX.DirectInput;
 using EffectType = FreePIE.Core.Plugins.VJoy.EffectType;
 using System.Linq;
 using FreePIE.Core.Plugins.VJoy.PacketData;
+using System.Threading;
+using System.Globalization;
 
 namespace FreePIE.Core.Plugins.Dx
 {
@@ -27,6 +29,10 @@ namespace FreePIE.Core.Plugins.Dx
 
         public Device(Joystick joystick)
         {
+            //Force english debugging info.
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+            Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
+
             this.joystick = joystick;
             SetRange(-1000, 1000);
             getPressedStrategy = new GetPressedStrategy<int>(GetDown);
@@ -110,8 +116,8 @@ namespace FreePIE.Core.Plugins.Dx
             //Also, from my testing, when new Effect is called no packets were sent, all above 3 were sent all at once when SetParamters was called (or, when new Effect was called with EffectParameters, obviously). Meaning that there's no real advantage to calling new Effect early.
 
             //angle is in 100th degrees, so if you want to express 90 degrees (vector pointing to the right) you'll have to enter 9000
-            var directions = er.Polar ? new int[] { er.AngleInDegrees * 100, 0 } : new int[] { er.DirectionX, er.DirectionY };
-            CreateEffect(er.BlockIndex, er.EffectType, er.Polar, directions, er.Duration, er.Gain * 39, er.SamplePeriod, 0);//, er.TriggerBtn, er.TriggerRepeatInterval);
+            var directions = er.Polar ? new int[] { er.NormalizedAngleInDegrees, 0 } : new int[] { er.DirectionX, er.DirectionY };
+            CreateEffect(er.BlockIndex, er.EffectType, er.Polar, directions, er.Duration, er.NormalizedGain, er.SamplePeriod, 0);//, er.TriggerBtn, er.TriggerRepeatInterval);
         }
 
         public void CreateEffect(int blockIndex, EffectType effectType, bool polar, int[] dirs, int duration = -1, int gain = 10000, int samplePeriod = 0, int startDelay = 0, int triggerButton = -1, int triggerRepeatInterval = 0)
@@ -170,6 +176,15 @@ namespace FreePIE.Core.Plugins.Dx
             }
         }
 
+        public void Stop()
+        {
+            foreach (var e in joystick.CreatedEffects)
+            {
+                Console.WriteLine("Stopping effect: {0}", GuidToEffectType[e.Guid]);
+                e.Stop();
+            }
+        }
+
         #region FFB helper functions
 
         /// <summary>
@@ -179,8 +194,28 @@ namespace FreePIE.Core.Plugins.Dx
         /// <param name="type">The <see cref="EffectType"/> to create an effect for</param>
         private void CreateEffect(int blockIndex, EffectType type)
         {
+            Console.WriteLine("Creating effect: {0}", type);
+
             //Construct empty TypeSpecificParameters (without, SetParameters throws an exception)
             effectParams[blockIndex].Parameters = GetTypeSpecificParameter(type);
+
+            var eGuid = GetEffectGuid(type);
+
+            var createdEffects = joystick.CreatedEffects.ToArray();
+
+            Console.WriteLine("This device already has {0} effects created.", createdEffects.Length);
+            if (createdEffects.Length > 0)
+            {
+                var sameEffects = createdEffects.Where(e => e.Guid == eGuid).ToArray();
+                Console.WriteLine("Of those, {0} are of the current type. Disposing them (if they have their 'Disposed' flag set to false)", sameEffects.Length);
+
+                foreach (var sameEffect in sameEffects)
+                {
+                    Console.WriteLine("{0}: Disposed: {1};", sameEffect.Guid, sameEffect.Disposed);
+                    if (!sameEffect.Disposed)
+                        sameEffect.Dispose();
+                }
+            }
 
             //if an effect already exists, dispose it (do not attempt to check whether it's still valid and use SetParameters(.., EffectParameterFlags.All), because that'll crash.
             if (Effects[blockIndex] != null && !Effects[blockIndex].Disposed)
@@ -188,7 +223,7 @@ namespace FreePIE.Core.Plugins.Dx
 
             try
             {
-                Effects[blockIndex] = new Effect(joystick, GetEffectGuid(type), effectParams[blockIndex]);
+                Effects[blockIndex] = new Effect(joystick, eGuid, effectParams[blockIndex]);
             } catch (Exception e)
             {
                 throw new Exception("Unable to create new effect: " + e.Message, e);
@@ -227,7 +262,7 @@ namespace FreePIE.Core.Plugins.Dx
         {
             Effects[blockIndex]?.Dispose();
         }
-        
+
         #endregion
 
         #region mapping functions
@@ -257,6 +292,8 @@ namespace FreePIE.Core.Plugins.Dx
                     return null;
             }
         }
+
+        private static Dictionary<Guid, EffectType> GuidToEffectType = Enum.GetValues(typeof(EffectType)).Cast<EffectType>().ToDictionary(EffectTypeGuidMap);
 
         private static Guid EffectTypeGuidMap(EffectType et)
         {

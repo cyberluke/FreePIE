@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using FreePIE.Core.Plugins.Dx;
 using FreePIE.Core.Plugins.Strategies;
 using vJoyInterfaceWrap;

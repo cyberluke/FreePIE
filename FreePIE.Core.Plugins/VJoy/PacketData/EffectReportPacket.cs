@@ -22,7 +22,7 @@ namespace FreePIE.Core.Plugins.VJoy.PacketData
         [FieldOffset(9)]
         public byte Gain;
         [FieldOffset(10)]
-        public byte TriggerBtn; //button?
+        public sbyte TriggerBtn; //button?
         [FieldOffset(11)]
         private byte PolarByte;
         [FieldOffset(12)]
@@ -32,7 +32,28 @@ namespace FreePIE.Core.Plugins.VJoy.PacketData
         [FieldOffset(13)]
         public byte DirectionY;
 
-        public bool Polar { get { return PolarByte == 0x04; } }
+        public bool Polar { get { return (PolarByte & 0x04) == 0x04; } }
+
+        public int NormalizedGain
+        {
+            get {
+                // Gain as expected by DirectInput: ranging from 0 to 10000
+                return Gain * 10000 / 255;
+            }
+        }
+
+        public int NormalizedAngleInDegrees
+        {
+            get
+            {
+                if (!Polar)
+                    throw new NotImplementedException("This EffectReport is not in polar coordinates, no directional conversion done yet");
+
+                // Angle as expected by DirectInput: ranging from 0 to 36000
+                return Direction * 36000 / 255;
+            }
+        }
+
         public int AngleInDegrees
         {
             get
