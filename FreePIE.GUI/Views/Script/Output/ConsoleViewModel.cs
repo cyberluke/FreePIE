@@ -94,13 +94,11 @@ namespace FreePIE.GUI.Views.Script.Output
     public class ConsoleTextWriter : AConsoleTextWriter
     {
         private Queue<string> consoleStack;
-        int mainThread;
+        int mainThread = 0;
 
         public ConsoleTextWriter(ConsoleViewModel output) : base(output)
         {
             consoleStack = new Queue<string>();
-            // Bluntly assuming the constructor is called from the so-called main thread...
-            mainThread = Thread.CurrentThread.ManagedThreadId;
         }
 
         protected override void WorkerDoWork(object sender, DoWorkEventArgs e)
@@ -122,7 +120,9 @@ namespace FreePIE.GUI.Views.Script.Output
 
         public override void WriteLine(string value)
         {
-            if (Thread.CurrentThread.ManagedThreadId != mainThread)
+            if (mainThread == 0)
+                mainThread = Thread.CurrentThread.ManagedThreadId;
+            else if (Thread.CurrentThread.ManagedThreadId != mainThread)
                 throw new Exception("Logging is *not* thread-safe!");
 
             consoleStack.Enqueue(value);
