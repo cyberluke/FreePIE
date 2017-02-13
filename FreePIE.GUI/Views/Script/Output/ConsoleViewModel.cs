@@ -104,9 +104,9 @@ namespace FreePIE.GUI.Views.Script.Output
         {
             while (true)
             {
-                if (consoleStack.Count > 0)
-                    output.Text = string.Join(Environment.NewLine, consoleStack);
-
+                lock (consoleStack)
+                    if (consoleStack.Count > 0)
+                        output.Text = string.Join(Environment.NewLine, consoleStack);
                 Thread.Sleep(100);
             }
         }
@@ -114,14 +114,18 @@ namespace FreePIE.GUI.Views.Script.Output
         public override void Clear()
         {
             output.Text = null;
-            consoleStack.Clear();
+            lock (consoleStack)
+                consoleStack.Clear();
         }
 
         public override void WriteLine(string value)
         {
-            consoleStack.Enqueue(value);
-            if (consoleStack.Count > 1000)
-                consoleStack.Dequeue();
+            lock (consoleStack)
+            {
+                consoleStack.Enqueue(value);
+                if (consoleStack.Count > 1000)
+                    consoleStack.Dequeue();
+            }
         }
     }
 }
