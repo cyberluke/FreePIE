@@ -158,7 +158,7 @@ namespace FreePIE.Core.Plugins.Dx
         {
             CheckFfbSupport("Unable to set constant force");
 
-            if (Effects[blockIndex] == null)
+            if (Effects[blockIndex] == null || Effects[blockIndex].Disposed)
                 //As discussed in the SetEffectParams method, Set<EffectType> is called before an effect is created. So, instead of throwing an exception, just ignore.
                 return;// throw new Exception("No effect has been created in block " + blockIndex);
 

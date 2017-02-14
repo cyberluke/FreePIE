@@ -65,7 +65,7 @@ namespace FreePIE.Core.Plugins.VJoy
                         action(dev, convertedPacket);
                 } catch (Exception e)
                 {
-                    Console.WriteLine("Excecption when trying to forward:{0}\t{1}{0}\t{2}", Environment.NewLine, e.Message, e.StackTrace);
+                    Console.WriteLine("Exception when trying to forward:{0}\t{1}{0}\t{2}", Environment.NewLine, e.Message, e.StackTrace);
                     //throw;
                 }
             } else
