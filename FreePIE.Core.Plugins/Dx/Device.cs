@@ -216,6 +216,7 @@ namespace FreePIE.Core.Plugins.Dx
 
             var createdEffects = joystick.CreatedEffects.ToArray();
 
+            /*
             Console.WriteLine("This device already has {0} effects created.", createdEffects.Length);
             if (createdEffects.Length > 0)
             {
@@ -233,6 +234,13 @@ namespace FreePIE.Core.Plugins.Dx
             //if an effect already exists, dispose it (do not attempt to check whether it's still valid and use SetParameters(.., EffectParameterFlags.All), because that'll crash.
             if (Effects[blockIndex] != null && !Effects[blockIndex].Disposed)
                 Effects[blockIndex].Dispose();
+                */
+            var sameEffects = createdEffects.Where(e => e.Guid == eGuid).ToArray();
+            if (sameEffects.Length > 0)
+            {
+                Effects[blockIndex] = sameEffects[0];
+                return;
+            }
 
             try
             {
