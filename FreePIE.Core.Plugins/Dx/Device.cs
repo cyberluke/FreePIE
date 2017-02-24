@@ -214,7 +214,7 @@ namespace FreePIE.Core.Plugins.Dx
 
             var eGuid = GetEffectGuid(type);
 
-            var createdEffects = joystick.CreatedEffects.ToArray();
+            //var createdEffects = joystick.CreatedEffects.ToArray();
 
             /*
             Console.WriteLine("This device already has {0} effects created.", createdEffects.Length);
@@ -235,12 +235,17 @@ namespace FreePIE.Core.Plugins.Dx
             if (Effects[blockIndex] != null && !Effects[blockIndex].Disposed)
                 Effects[blockIndex].Dispose();
                 */
+            /*
             var sameEffects = createdEffects.Where(e => e.Guid == eGuid).ToArray();
             if (sameEffects.Length > 0)
             {
                 Effects[blockIndex] = sameEffects[0];
                 return;
             }
+            */
+
+            if (Effects[blockIndex] != null && !Effects[blockIndex].Disposed)
+                return;
 
             try
             {
