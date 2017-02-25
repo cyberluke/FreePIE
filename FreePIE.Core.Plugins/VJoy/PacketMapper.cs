@@ -31,7 +31,7 @@ namespace FreePIE.Core.Plugins.VJoy
             this[PacketType.CustomForceData] = null;
             this[PacketType.DownloadForceSample] = null;
             this[PacketType.EffectOperation] = new PacketAction<EffectOperationPacket>((d, p) => d.OperateEffect(p.BlockIndex, p.Operation, p.LoopCount));
-            //this[PacketType.PidBlockFree] = new PacketAction<BasePacket>((d, p) => d.DisposeEffect(p.BlockIndex));
+            this[PacketType.PidBlockFree] = new PacketAction<BasePacket>((d, p) => d.DisposeEffect(p.BlockIndex));
             this[PacketType.PidDeviceControl] = new PacketAction<PIDDeviceControlPacket>(null);
             this[PacketType.DeviceGain] = new PacketAction<DeviceGainPacket>((d, p) => d.Gain = p.NormalizedGain);
             this[PacketType.SetCustomForce] = null;

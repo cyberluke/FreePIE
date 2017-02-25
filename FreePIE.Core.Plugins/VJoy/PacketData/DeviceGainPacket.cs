@@ -8,8 +8,6 @@ namespace FreePIE.Core.Plugins.VJoy.PacketData
         [FieldOffset(0)]
         public byte IdxAndPacketType;
         [FieldOffset(1)]
-        public byte BlockIndex;
-        [FieldOffset(2)]
         public byte Gain;
 
         public int NormalizedGain
