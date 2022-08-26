@@ -117,6 +117,49 @@ namespace FreePIE.Core.Plugins.Dx
             effectParams[blockIndex].Envelope = envelope;
         }
 
+        public void setRamp(int blockIndex, int start, int end)
+        {
+            CheckFfbSupport("Unable to set constant force");
+
+            if (effectParams[blockIndex].Parameters == null)
+            {
+                effectParams[blockIndex].Parameters = new RampForce();
+            }
+
+            effectParams[blockIndex].Parameters.AsRampForce().Start = start;
+            effectParams[blockIndex].Parameters.AsRampForce().End = end;
+
+            if (Effects[blockIndex] != null && !Effects[blockIndex].Disposed)
+            {
+                Effects[blockIndex].SetParameters(effectParams[blockIndex], EffectParameterFlags.TypeSpecificParameters);
+            }
+        }
+
+        public void setConditionReport(int blockIndex, int centerPointOffset, int deadBand, bool isY, int negCoeff, int negSatur, int posCoeff, int posSatur)
+        {
+            CheckFfbSupport("Unable to set constant force");
+
+            if (effectParams[blockIndex].Parameters == null)
+            {
+                effectParams[blockIndex].Parameters = new ConditionSet();
+            }
+
+            int lastConditionId = effectParams[blockIndex].Parameters.AsConditionSet().Conditions.Length;
+
+            effectParams[blockIndex].Parameters.AsConditionSet().Conditions[lastConditionId].Offset = centerPointOffset;
+            effectParams[blockIndex].Parameters.AsConditionSet().Conditions[lastConditionId].DeadBand = deadBand;
+            effectParams[blockIndex].Parameters.AsConditionSet().Conditions[lastConditionId].NegativeCoefficient = negCoeff;
+            effectParams[blockIndex].Parameters.AsConditionSet().Conditions[lastConditionId].NegativeSaturation = negSatur;
+            effectParams[blockIndex].Parameters.AsConditionSet().Conditions[lastConditionId].PositiveCoefficient = posCoeff;
+            effectParams[blockIndex].Parameters.AsConditionSet().Conditions[lastConditionId].PositiveSaturation = posSatur;
+
+            if (Effects[blockIndex] != null && !Effects[blockIndex].Disposed)
+            {
+                Effects[blockIndex].SetParameters(effectParams[blockIndex], EffectParameterFlags.TypeSpecificParameters);
+            }
+        }
+
+
         public void SetPeriodicForce(int blockIndex, int magnitude, int offset, int period, int phase)
         {
             CheckFfbSupport("Unable to set constant force");
@@ -323,6 +366,11 @@ namespace FreePIE.Core.Plugins.Dx
             }
         }
 
+        public void DownloadToDevice(int blockIndex)
+        {
+            Effects[blockIndex].Download();
+        }
+
         public void OperateEffect(int blockIndex, FFBOP effectOperation, int loopCount = 0)
         {
 
@@ -336,11 +384,10 @@ namespace FreePIE.Core.Plugins.Dx
                 case FFBOP.EFF_START:
                     Console.WriteLine("Name: {0}", Name);
                     Console.WriteLine("InstanceGuid: {0}", InstanceGuid);
-                    Effects[blockIndex].Download();
+                    
                     Effects[blockIndex].Start(loopCount);
                     break;
                 case FFBOP.EFF_SOLO:
-                    Effects[blockIndex].Download();
                     Effects[blockIndex].Start(loopCount, EffectPlayFlags.Solo);
                     break;
                 case FFBOP.EFF_STOP:

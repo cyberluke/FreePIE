@@ -124,6 +124,61 @@ namespace FreePIE.Core.Plugins.VJoy
                     envelopePacket.PacketType = packetType;
                     envelopePacket.fromPacket(packetPtrCopy);
                     return envelopePacket;
+                case FFBPType.PT_CONDREP:
+                    ConditionReportPacket conditionPacket = new ConditionReportPacket();
+                    conditionPacket.BlockIndex = BlockIndex;
+                    conditionPacket.DeviceId = DeviceId;
+                    conditionPacket.PacketType = packetType;
+                    conditionPacket.fromPacket(packetPtrCopy);
+                    return conditionPacket;
+                case FFBPType.PT_RAMPREP:
+                    RampReportPacket rampPacket = new RampReportPacket();
+                    rampPacket.BlockIndex = BlockIndex;
+                    rampPacket.DeviceId = DeviceId;
+                    rampPacket.PacketType = packetType;
+                    rampPacket.fromPacket(packetPtrCopy);
+                    return rampPacket;
+                case FFBPType.PT_CSTMREP:
+                    // Custom Force Data needs to be uncommented in VJoy source and should read correct
+                    // parameters for particular vendor from registry such as this HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C2A8\OEMForceFeedback\Effects\{13541C2B-8E33-11D0-9AD0-00A0C9A06E35}
+                    BasePacket cstPacket = new BasePacket();
+                    cstPacket.BlockIndex = BlockIndex;
+                    cstPacket.DeviceId = DeviceId;
+                    cstPacket.PacketType = packetType;
+                    return cstPacket;
+                case FFBPType.PT_SMPLREP:
+                    BasePacket smplPacket = new BasePacket();
+                    smplPacket.BlockIndex = BlockIndex;
+                    smplPacket.DeviceId = DeviceId;
+                    return smplPacket;
+                case FFBPType.PT_SETCREP:
+                    // Custom Report needs to be uncommented in VJoy source and should read correct
+                    // parameters for particular vendor from registry such as this HKEY_CURRENT_USER\System\CurrentControlSet\Control\MediaProperties\PrivateProperties\Joystick\OEM\VID_046D&PID_C2A8\OEMForceFeedback\Effects\{13541C2B-8E33-11D0-9AD0-00A0C9A06E35}
+                    BasePacket cstRepPacket = new BasePacket();
+                    cstRepPacket.BlockIndex = BlockIndex;
+                    cstRepPacket.DeviceId = DeviceId;
+                    return cstRepPacket;
+                case FFBPType.PT_BLKLDREP:
+                    DeviceReportPacket blkldPacket = new DeviceReportPacket();
+                    blkldPacket.BlockIndex = BlockIndex;
+                    blkldPacket.DeviceId = DeviceId;
+                    blkldPacket.PacketType = packetType;
+                    blkldPacket.fromPacket(packetPtrCopy);
+                    return blkldPacket;
+                case FFBPType.PT_POOLREP:
+                    DeviceReportPacket poolPacket = new DeviceReportPacket();
+                    poolPacket.BlockIndex = BlockIndex;
+                    poolPacket.DeviceId = DeviceId;
+                    poolPacket.PacketType = packetType;
+                    poolPacket.fromPacket(packetPtrCopy);
+                    return poolPacket;
+                case FFBPType.PT_STATEREP:
+                    DeviceReportPacket statePacket = new DeviceReportPacket();
+                    statePacket.BlockIndex = BlockIndex;
+                    statePacket.DeviceId = DeviceId;
+                    statePacket.PacketType = packetType;
+                    statePacket.fromPacket(packetPtrCopy);
+                    return statePacket;
                 default:
                     Console.WriteLine("Cannot get packet type, cannot create mapping for {0}", packetType.ToString());
                     return null;
