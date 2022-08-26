@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>FreePIE.Core.Plugins</RootNamespace>
     <AssemblyName>FreePIE.Core.Plugins</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -25,6 +25,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PlatformTarget>x86</PlatformTarget>
     <Prefer32Bit>false</Prefer32Bit>
+    <CodeAnalysisIgnoreGeneratedCode>false</CodeAnalysisIgnoreGeneratedCode>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -103,6 +104,8 @@
     <Compile Include="Midi\DataGlobal.cs" />
     <Compile Include="TobiiEyeXPlugin.cs" />
     <Compile Include="VJoy\PacketAction.cs" />
+    <Compile Include="VJoy\PacketData\EnvelopeReportPacket.cs" />
+    <Compile Include="VJoy\PacketData\PeriodicReportPacket.cs" />
     <Compile Include="VJoy\PacketData\ConstantForcePacket.cs" />
     <Compile Include="VJoy\PacketData\CreateNewEffectPacket.cs" />
     <Compile Include="VJoy\PacketData\DeviceGainPacket.cs" />
@@ -116,6 +119,7 @@
     <Compile Include="VJoy\Extensions.cs" />
     <Compile Include="VJoy\FfbPacket.cs" />
     <Compile Include="VJoy\VJoyFFBWrap.cs" />
+    <Compile Include="VJoy\VJoyUtils.cs" />
     <Compile Include="Wiimote\Calibratable.cs" />
     <Compile Include="SpeechPlugin.cs" />
     <Compile Include="VJoyPlugin.cs" />

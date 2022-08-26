@@ -1,19 +1,29 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Runtime.InteropServices;
+using vJoyInterfaceWrap;
 
 namespace FreePIE.Core.Plugins.VJoy.PacketData
 {
-    [StructLayout(LayoutKind.Explicit)]
+
     public struct ConstantForcePacket : IFfbPacketData
     {
-        [FieldOffset(0)]
-        public byte IdxAndPacketType;
-        [FieldOffset(1)]
-        public byte BlockIndex;
-        [FieldOffset(2)]
-        public short Magnitude;
+        public int DeviceId;
+        public FFBPType PacketType;
+        public int BlockIndex;
+        public vJoy.FFB_EFF_CONSTANT Effect;
+
         public override string ToString()
         {
-            return string.Format("Magnitude: {0}", Magnitude);
+            return string.Format("Magnitude: {0}", Effect.Magnitude);
+        }
+
+        public void fromPacket(IntPtr data)
+        {
+            Effect = new vJoy.FFB_EFF_CONSTANT();
+            if ((uint)ERROR.ERROR_SUCCESS != VJoyUtils.Joystick.Ffb_h_Eff_Constant(data, ref Effect))
+            {
+                throw new Exception("Could not parse incoming packet as Constant Report from VJoy.");
+            }
         }
     }
 }

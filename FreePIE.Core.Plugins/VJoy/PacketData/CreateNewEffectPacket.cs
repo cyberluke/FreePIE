@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Runtime.InteropServices;
 
 namespace FreePIE.Core.Plugins.VJoy.PacketData
 {
@@ -8,11 +9,18 @@ namespace FreePIE.Core.Plugins.VJoy.PacketData
         [FieldOffset(0)]
         public byte IdxAndPacketType;
         [FieldOffset(1)]
-        public EffectType Type;
+        public byte BlockIndex;
+        [FieldOffset(2)]
+        public FFBEType Type;
 
         public override string ToString()
         {
             return string.Format("EffectType: {0}", Type);
+        }
+
+        public void fromPacket(IntPtr data)
+        {
+            throw new NotImplementedException();
         }
     }
 }

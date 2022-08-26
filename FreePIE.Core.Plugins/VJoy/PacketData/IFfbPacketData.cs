@@ -1,21 +1,27 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Runtime.InteropServices;
 
 namespace FreePIE.Core.Plugins.VJoy.PacketData
 {
     public interface IFfbPacketData
     {
+        void fromPacket(IntPtr data);
     }
 
-    [StructLayout(LayoutKind.Explicit)]
     public struct BasePacket : IFfbPacketData
     {
-        [FieldOffset(0)]
-        public byte IdxAndPacketType;
-        [FieldOffset(1)]
-        public byte BlockIndex;
+        public int DeviceId;
+        public FFBPType PacketType;
+        public int BlockIndex;
+
         public override string ToString()
         {
             return "Base packet";
+        }
+
+        public void fromPacket(IntPtr data)
+        {
+            throw new NotImplementedException();
         }
     }
 }

@@ -7,7 +7,6 @@ using SlimDX.DirectInput;
 using FreePIE.Core.Plugins.VJoy;
 using JoystickState = SlimDX.DirectInput.JoystickState;
 using Device = FreePIE.Core.Plugins.Dx.Device;
-using EffectType = FreePIE.Core.Plugins.VJoy.EffectType;
 
 namespace FreePIE.Core.Plugins
 {
@@ -144,14 +143,19 @@ namespace FreePIE.Core.Plugins
             device.SetConstantForce(blockIndex, magnitude);
         }
 
-        public void createEffect(int blockIndex, EffectType effectType, bool polar, IEnumerable<int> dirs, int duration = -1, int gain = 10000, int samplePeriod = 0, int startDelay = 0, int triggerButton = -1, int triggerRepeatInterval = 0)
+        public void createConstantForceEffect(int blockIndex, bool polar, IEnumerable<int> dirs, int duration = -1, int gain = 10000, int samplePeriod = 0, int startDelay = 0, int triggerButton = -1, int triggerRepeatInterval = 0)
         {
-            device.CreateEffect(blockIndex, effectType, polar, dirs.ToArray(), duration, gain, samplePeriod, startDelay, triggerButton, triggerRepeatInterval);
+            device.CreateEffect(blockIndex, FFBEType.ET_CONST, polar, dirs.ToArray(), duration, gain, samplePeriod, startDelay, triggerButton, triggerRepeatInterval);
         }
 
-        public void operateEffect(int blockIndex, EffectOperation effectOperation, int loopCount = 0)
+        public void startEffect(int blockIndex, int loopCount = 0)
         {
-            device.OperateEffect(blockIndex, effectOperation, loopCount);
+            device.OperateEffect(blockIndex, FFBOP.EFF_START, loopCount);
+        }
+
+        public void createTestEffect()
+        {
+            device.CreateTestEffect();
         }
     }
 }

@@ -42,7 +42,7 @@ namespace FreePIE.Tests.Core.Plugins
             ThreadPool.QueueUserWorkItem(obj =>
             {
                 vJoyGlobal.registerFfbDevice(global);
-                vJoyFfbControl.createEffect(1, FreePIE.Core.Plugins.VJoy.EffectType.ConstantForce, false, new[] {1, 0});
+                vJoyFfbControl.createEffect(1, FFBEType.ET_CONST, false, new[] {1, 0});
                 vJoyFfbControl.setConstantForce(1, 5000);
                 vJoyFfbControl.operateEffect(1, FreePIE.Core.Plugins.VJoy.EffectOperation.Start, 0);
 

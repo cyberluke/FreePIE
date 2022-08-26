@@ -1,18 +1,29 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Runtime.InteropServices;
+using vJoyInterfaceWrap;
 
 namespace FreePIE.Core.Plugins.VJoy.PacketData
 {
-    [StructLayout(LayoutKind.Explicit, Pack = 0, Size = 3)]
+
     public struct PIDDeviceControlPacket : IFfbPacketData
     {
-        [FieldOffset(0)]
-        public byte IdxAndPacketType;
-        [FieldOffset(1)]
-        public PidDeviceControl DeviceControl;
+        public int DeviceId;
+        public FFBPType PacketType;
+        public int BlockIndex;
+        public FFB_CTRL DeviceControl;
 
         public override string ToString()
         {
             return string.Format("PIDDeviceControl: {0}", DeviceControl); 
+        }
+
+        public void fromPacket(IntPtr data)
+        {
+            DeviceControl = new FFB_CTRL();
+            if ((uint)ERROR.ERROR_SUCCESS != VJoyUtils.Joystick.Ffb_h_DevCtrl(data, ref DeviceControl))
+            {
+                throw new Exception("Could not parse incoming packet as Constant Report from VJoy.");
+            }
         }
     }
 }

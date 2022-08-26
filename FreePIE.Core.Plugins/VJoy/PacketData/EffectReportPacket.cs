@@ -1,44 +1,33 @@
 ﻿using System;
-using System.Runtime.InteropServices;
 using System.Text;
+using vJoyInterfaceWrap;
 
 namespace FreePIE.Core.Plugins.VJoy.PacketData
 {
-    [StructLayout(LayoutKind.Explicit)]
+
     public struct EffectReportPacket : IFfbPacketData
     {
-        [FieldOffset(0)]
-        public byte IdxAndPacketType;
-        [FieldOffset(1)]
-        public byte BlockIndex;
-        [FieldOffset(2)]
-        public EffectType EffectType;
-        [FieldOffset(3)]
-        public short Duration;
-        [FieldOffset(5)]
-        public short TriggerRepeatInterval;
-        [FieldOffset(7)]
-        public short SamplePeriod;
-        [FieldOffset(9)]
-        public byte Gain;
-        [FieldOffset(10)]
-        public sbyte TriggerBtn; //button?
-        [FieldOffset(11)]
-        private byte PolarByte;
-        [FieldOffset(12)]
-        public byte Direction;
-        [FieldOffset(12)]
-        public byte DirectionX;
-        [FieldOffset(13)]
-        public byte DirectionY;
+        public int DeviceId;
+        public FFBPType PacketType;
+        public int BlockIndex;
+        public vJoy.FFB_EFF_REPORT Effect;
 
-        public bool Polar { get { return (PolarByte & 0x04) == 0x04; } }
+
+        public void fromPacket(IntPtr data)
+        {
+            Effect = new vJoy.FFB_EFF_REPORT();
+            if ((uint)ERROR.ERROR_SUCCESS != VJoyUtils.Joystick.Ffb_h_Eff_Report(data, ref Effect))
+            {
+                throw new Exception("Could not parse incoming packet as EffectReport from VJoy.");
+            }
+        }
 
         public int NormalizedGain
         {
-            get {
+            get
+            {
                 // Gain as expected by DirectInput: ranging from 0 to 10000
-                return Gain * 10000 / 255;
+                return ((byte)Effect.Gain * 10000) / 255;
             }
         }
 
@@ -46,11 +35,11 @@ namespace FreePIE.Core.Plugins.VJoy.PacketData
         {
             get
             {
-                if (!Polar)
+                if (!Effect.Polar)
                     throw new NotImplementedException("This EffectReport is not in polar coordinates, no directional conversion done yet");
 
                 // Angle as expected by DirectInput: ranging from 0 to 36000
-                return Direction * 36000 / 255;
+                return Effect.Direction * 36000 / 255;
             }
         }
 
@@ -58,36 +47,56 @@ namespace FreePIE.Core.Plugins.VJoy.PacketData
         {
             get
             {
-                if (!Polar)
+                if (!Effect.Polar)
                     throw new NotImplementedException("This EffectReport is not in polar coordinates, no directional conversion done yet");
-                return Direction * 360 / 255;
+                return Effect.Direction * 360 / 255;
             }
         }
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
-            sb.Append("\tEffectType: ");
-            sb.AppendLine(EffectType.ToString());
-            sb.Append("\tDuration: ");
-            sb.AppendLine(Duration.ToString());
-            sb.Append("\tTriggerRepeatInterval: ");
-            sb.AppendLine(TriggerRepeatInterval.ToString());
-            sb.Append("\tSamplePeriod: ");
-            sb.AppendLine(SamplePeriod.ToString());
-            sb.Append("\tGain: ");
-            sb.AppendLine(Gain.ToString());
-            sb.Append("\tTriggerBtn (?): ");
-            sb.AppendLine(TriggerBtn.ToString());
-            sb.Append("\tPolar: ");
-            sb.AppendLine(Polar.ToString());
-            if (Polar)
+
+            string TypeStr;
+            if (!VJoyUtils.EffectType2Str(Effect.EffectType, out TypeStr))
+                sb.AppendFormat(" >> Effect Report: {0} {1}\n", (int)Effect.EffectType, Effect.EffectType.ToString());
+            else
+                sb.AppendFormat(" >> Effect Report: {0}\n", TypeStr);
+
+            sb.AppendFormat(" >> AxisEnabledDirection: {0}\n", (ushort)Effect.AxesEnabledDirection);
+            if (Effect.Polar)
             {
-                sb.Append("\tAngle: ");
-                sb.AppendLine(AngleInDegrees.ToString());
-            } else
-            {
-                sb.AppendFormat("\tX: {0:3}, Y:{1:3}\n", DirectionX, DirectionY);
+                sb.AppendFormat(" >> Direction: {0} deg ({1})\n", VJoyUtils.Polar2Deg(Effect.Direction), Effect.Direction);
             }
+            else
+            {
+                sb.AppendFormat(" >> X Direction: {0}\n", Effect.DirX);
+                sb.AppendFormat(" >> Y Direction: {0}\n", Effect.DirY);
+            }
+
+            if (Effect.Duration == 0xFFFF)
+                sb.AppendFormat(" >> Duration: Infinite\n");
+            else
+                sb.AppendFormat(" >> Duration: {0} MilliSec\n", (int)(Effect.Duration));
+
+            if (Effect.TrigerRpt == 0xFFFF)
+                sb.AppendFormat(" >> Trigger Repeat: Infinite\n");
+            else
+                sb.AppendFormat(" >> Trigger Repeat: {0}\n", (int)(Effect.TrigerRpt));
+
+            sb.AppendFormat("\tTrigger Button (flags): {0}\n", Effect.TrigerBtn.ToString());
+
+            if (Effect.SamplePrd == 0xFFFF)
+                sb.AppendFormat(" >> Sample Period: Infinite\n");
+            else
+                sb.AppendFormat(" >> Sample Period: {0}\n", (int)(Effect.SamplePrd));
+
+            if (Effect.StartDelay == 0xFFFF)
+                sb.AppendFormat(" >> Start Delay: max \n");
+            else
+                sb.AppendFormat(" >> Start Delay: {0}\n", (int)(Effect.StartDelay));
+
+            sb.AppendFormat(" >> Gain: {0}%\n", VJoyUtils.Byte2Percent(Effect.Gain));
+
             return sb.ToString();
         }
     }

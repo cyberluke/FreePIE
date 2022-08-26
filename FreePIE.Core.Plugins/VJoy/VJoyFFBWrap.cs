@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Collections.Concurrent;
+using vJoyInterfaceWrap;
 
 namespace FreePIE.Core.Plugins.VJoy
 {
@@ -31,10 +32,13 @@ namespace FreePIE.Core.Plugins.VJoy
         public static void RegisterDevice(int vJoyIdx, Device dev)
         {
             RegisterBaseCallback();
+
             if (registeredDevices[vJoyIdx - 1] == null)
                 registeredDevices[vJoyIdx - 1] = new HashSet<Device>();
+
             if (!registeredDevices[vJoyIdx - 1].Add(dev))
                 Console.WriteLine("That device has already been registered!");
+
         }
 
         /// <summary>
@@ -53,11 +57,12 @@ namespace FreePIE.Core.Plugins.VJoy
         /// <summary>
         /// Called when vJoy has a new FFB packet.
         /// </summary>
-        /// <param name="ffbDataPtr"></param>
+        /// <param name="data"></param>
         /// <param name="userData"></param>
-        private static void OnFfbPacketAvailable(IntPtr ffbDataPtr, IntPtr userData)
+        private static void OnFfbPacketAvailable(IntPtr data, IntPtr userData)
         {
-            FfbPacket ffbPacket = new FfbPacket(ffbDataPtr);
+
+            FfbPacket ffbPacket = new FfbPacket(data);
             var pa = packetMapper[ffbPacket.PacketType];
             if (pa != null)
                 queueWrapper.Add(pa.Convert(ffbPacket));

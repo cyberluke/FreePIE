@@ -22,8 +22,8 @@ namespace FreePIE.Core.Plugins.VJoy
     public class PacketAction<T> : PacketAction
         where T : IFfbPacketData
     {
-        public readonly Action<Device, T> action;
-        public PacketAction(Action<Device, T> act)
+        public readonly Action<Device, T, FfbPacket> action;
+        public PacketAction(Action<Device, T, FfbPacket> act)
         {
             action = act;
         }
@@ -41,11 +41,13 @@ namespace FreePIE.Core.Plugins.VJoy
         public readonly T convertedPacket;
         private readonly DateTime timestamp;
 
-        public AsyncPacketData(Action<Device, T> a, FfbPacket p) : base(a)
+        public AsyncPacketData(Action<Device, T, FfbPacket> a, FfbPacket p) : base(a)
         {
             timestamp = DateTime.Now;
             packet = p;
-            convertedPacket = packet.GetPacketData<T>();
+            convertedPacket = (T) p.GetPacketData(p.PacketType);
+            // If it breaks here it means incorrect conversion between PacketMapper definition
+            // and FfbPacket.GetPacketData() method
         }
 
         public void Call(IList<ICollection<Device>> registeredDevices)
@@ -62,7 +64,7 @@ namespace FreePIE.Core.Plugins.VJoy
                 try
                 {
                     foreach (var dev in rdevs)
-                        action(dev, convertedPacket);
+                        action(dev, convertedPacket, packet);
                 } catch (Exception e)
                 {
                     Console.WriteLine("Exception when trying to forward:{0}\t{1}{0}\t{2}", Environment.NewLine, e.Message, e.StackTrace);
