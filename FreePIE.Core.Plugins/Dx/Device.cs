@@ -121,10 +121,7 @@ namespace FreePIE.Core.Plugins.Dx
         {
             CheckFfbSupport("Unable to set constant force");
 
-            if (effectParams[blockIndex].Parameters == null)
-            {
-                effectParams[blockIndex].Parameters = new RampForce();
-            }
+            effectParams[blockIndex].Parameters = new RampForce();
 
             effectParams[blockIndex].Parameters.AsRampForce().Start = start;
             effectParams[blockIndex].Parameters.AsRampForce().End = end;
@@ -139,12 +136,17 @@ namespace FreePIE.Core.Plugins.Dx
         {
             CheckFfbSupport("Unable to set constant force");
 
-            if (effectParams[blockIndex].Parameters == null)
+            int lastConditionId = 0;
+            if (!(effectParams[blockIndex].Parameters is ConditionSet))
             {
                 effectParams[blockIndex].Parameters = new ConditionSet();
+            } else
+            {
+                effectParams[blockIndex].Parameters = new ConditionSet();
+                //lastConditionId = effectParams[blockIndex].Parameters.AsConditionSet().Size;
             }
 
-            int lastConditionId = effectParams[blockIndex].Parameters.AsConditionSet().Conditions.Length;
+            effectParams[blockIndex].Parameters.AsConditionSet().Conditions = new Condition[1];
 
             effectParams[blockIndex].Parameters.AsConditionSet().Conditions[lastConditionId].Offset = centerPointOffset;
             effectParams[blockIndex].Parameters.AsConditionSet().Conditions[lastConditionId].DeadBand = deadBand;
@@ -164,11 +166,7 @@ namespace FreePIE.Core.Plugins.Dx
         {
             CheckFfbSupport("Unable to set constant force");
 
-            if (effectParams[blockIndex].Parameters == null)
-            {
-                effectParams[blockIndex].Parameters = new PeriodicForce();
-            }
-
+            effectParams[blockIndex].Parameters = new PeriodicForce();
             effectParams[blockIndex].Parameters.AsPeriodicForce().Magnitude = magnitude;
             effectParams[blockIndex].Parameters.AsPeriodicForce().Offset = offset;
             effectParams[blockIndex].Parameters.AsPeriodicForce().Period = period;
@@ -337,8 +335,9 @@ namespace FreePIE.Core.Plugins.Dx
                 if (Effects[blockIndex].Guid.Equals(eGuid))
                 {
                     //Effects[blockIndex].SetParameters(effectParams[blockIndex]);
-                    Console.WriteLine("Ignoring as effect was already created");
-                    return;
+                    //Console.WriteLine("Ignoring as effect was already created");
+                    //return;
+                    Effects[blockIndex].Dispose();
                 }
                 else
                 {
