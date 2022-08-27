@@ -137,15 +137,7 @@ namespace FreePIE.Core.Plugins.Dx
             CheckFfbSupport("Unable to set constant force");
 
             int lastConditionId = 0;
-            if (!(effectParams[blockIndex].Parameters is ConditionSet))
-            {
-                effectParams[blockIndex].Parameters = new ConditionSet();
-            } else
-            {
-                effectParams[blockIndex].Parameters = new ConditionSet();
-                //lastConditionId = effectParams[blockIndex].Parameters.AsConditionSet().Size;
-            }
-
+            effectParams[blockIndex].Parameters = new ConditionSet();
             effectParams[blockIndex].Parameters.AsConditionSet().Conditions = new Condition[1];
 
             effectParams[blockIndex].Parameters.AsConditionSet().Conditions[lastConditionId].Offset = centerPointOffset;
@@ -155,10 +147,10 @@ namespace FreePIE.Core.Plugins.Dx
             effectParams[blockIndex].Parameters.AsConditionSet().Conditions[lastConditionId].PositiveCoefficient = posCoeff;
             effectParams[blockIndex].Parameters.AsConditionSet().Conditions[lastConditionId].PositiveSaturation = posSatur;
 
-            if (Effects[blockIndex] != null && !Effects[blockIndex].Disposed)
+            /*if (Effects[blockIndex] != null && !Effects[blockIndex].Disposed)
             {
                 Effects[blockIndex].SetParameters(effectParams[blockIndex], EffectParameterFlags.TypeSpecificParameters);
-            }
+            }*/
         }
 
 
@@ -172,10 +164,10 @@ namespace FreePIE.Core.Plugins.Dx
             effectParams[blockIndex].Parameters.AsPeriodicForce().Period = period;
             effectParams[blockIndex].Parameters.AsPeriodicForce().Phase = phase;
 
-            if (Effects[blockIndex] != null && !Effects[blockIndex].Disposed)
+            /*if (Effects[blockIndex] != null && !Effects[blockIndex].Disposed)
             {
                 Effects[blockIndex].SetParameters(effectParams[blockIndex], EffectParameterFlags.TypeSpecificParameters);
-            }
+            }*/
         }
 
         public void SetConstantForce(int blockIndex, int magnitude)
@@ -185,10 +177,10 @@ namespace FreePIE.Core.Plugins.Dx
             effectParams[blockIndex].Parameters = GetTypeSpecificParameter(FFBEType.ET_CONST);
             effectParams[blockIndex].Parameters.AsConstantForce().Magnitude = magnitude;
 
-            if (Effects[blockIndex] != null && !Effects[blockIndex].Disposed)
+            /*if (Effects[blockIndex] != null && !Effects[blockIndex].Disposed)
             {
                 Effects[blockIndex].SetParameters(effectParams[blockIndex], EffectParameterFlags.TypeSpecificParameters);
-            }
+            }*/
 
         }
 
@@ -265,21 +257,6 @@ namespace FreePIE.Core.Plugins.Dx
                 Envelope = envelope
             };
             effectParams[blockIndex].Parameters = parametersDefault;
-
-            // Convert polar to cartesian coordinates.
-            if (polar)
-            {
-                /*double pa = dirs[0] * Math.PI / 18000d;
-                // Convert to actual polar coordinates:
-                // FFB polar coordinates have 0degrees pointing to the north, and go clockwise, whereas 'real', mathematic polar coordinates point to the east and go counterclockwise
-                pa = 0.5 * Math.PI - pa;
-                // For being a direction, scale of x and y should not matter as long as they are in the same proportions relative to eachother (couldn't find anything in the spec though....). Might need to increase the 1000 constant to get a more precise number though...
-                dirs[0] = (int)(Math.Cos(pa) * 1000); // x-axis
-                if (dirs.Length > 1)
-                    dirs[1] = Axes.Length > 1 ? (int)(Math.Sin(pa) * 1000) : 0; // y-axis, if it exists*/
-
-            }
-
             effectParams[blockIndex].SetAxes(Axes, dirs);
 
             CreateEffect(blockIndex, effectType);
@@ -296,53 +273,13 @@ namespace FreePIE.Core.Plugins.Dx
         {
             Console.WriteLine("!!! Creating effect: {0}", type);
 
-            /*var createdEffects = joystick.CreatedEffects.ToArray();
-
-            
-            Console.WriteLine("This device already has {0} effects created.", createdEffects.Length);
-            if (createdEffects.Length > 0)
-            {
-                var sameEffects = createdEffects.Where(e => e.Guid == eGuid).ToArray();
-                Console.WriteLine("Of those, {0} are of the current type. Disposing them (if they have their 'Disposed' flag set to false)", sameEffects.Length);
-
-                foreach (var sameEffect in sameEffects)
-                {
-                    Console.WriteLine("{0}: Disposed: {1};", sameEffect.Guid, sameEffect.Disposed);
-                    if (!sameEffect.Disposed)
-                        sameEffect.Dispose();
-                }
-            }*/
-
-            //if an effect already exists, dispose it (do not attempt to check whether it's still valid and use SetParameters(.., EffectParameterFlags.All), because that'll crash.
-            /*if (Effects[blockIndex] != null && !Effects[blockIndex].Disposed)
-                Effects[blockIndex].Dispose();*/
-
-
-            /*var sameEffects = createdEffects.Where(e => e.Guid == eGuid).ToArray();
-            if (sameEffects.Length > 0)
-            {
-                Effects[blockIndex] = sameEffects[0];
-                return;
-            }*/
-
             var eGuid = GetEffectGuid(type);
             Console.WriteLine("eGuid {0}", eGuid);
 
 
             if (Effects[blockIndex] != null && !Effects[blockIndex].Disposed)
             {
-                //return;
-                if (Effects[blockIndex].Guid.Equals(eGuid))
-                {
-                    //Effects[blockIndex].SetParameters(effectParams[blockIndex]);
-                    //Console.WriteLine("Ignoring as effect was already created");
-                    //return;
-                    Effects[blockIndex].Dispose();
-                }
-                else
-                {
-                    Effects[blockIndex].Dispose();
-                }
+                Effects[blockIndex].Dispose();
             }
 
             try
@@ -376,14 +313,16 @@ namespace FreePIE.Core.Plugins.Dx
             CheckFfbSupport("Unable to operate effect");
 
             if (Effects[blockIndex] == null)
-                throw new Exception("No effect has been created in block " + blockIndex);
+            {
+                Console.WriteLine("No effect has been created in block " + blockIndex);
+                return;
+            }
 
             switch (effectOperation)
             {
                 case FFBOP.EFF_START:
-                    Console.WriteLine("Name: {0}", Name);
-                    Console.WriteLine("InstanceGuid: {0}", InstanceGuid);
-                    
+                    //Console.WriteLine("Name: {0}", Name);
+                    //Console.WriteLine("InstanceGuid: {0}", InstanceGuid);                   
                     Effects[blockIndex].Start(loopCount);
                     break;
                 case FFBOP.EFF_SOLO:
