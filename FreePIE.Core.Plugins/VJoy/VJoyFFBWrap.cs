@@ -16,12 +16,10 @@ namespace FreePIE.Core.Plugins.VJoy
         private static bool isRegistered;
         private static FFBPType lastPacketType;
         private static FFBEType lastEffectType;
-
         private static readonly PacketMapper packetMapper = new PacketMapper();
         private static readonly HashSet<Device>[] registeredDevices = new HashSet<Device>[16];
         private static readonly ConcurrentQueue<IAction<IList<ICollection<Device>>>> queue = new ConcurrentQueue<IAction<IList<ICollection<Device>>>>();
         private static readonly BlockingCollection<IAction<IList<ICollection<Device>>>> queueWrapper;
-
 
         static VJoyFfbWrap()
         {
@@ -69,8 +67,6 @@ namespace FreePIE.Core.Plugins.VJoy
         {
             FfbPacket ffbPacket = new FfbPacket(data);
             packetMapper.Enqueue(ffbPacket);
-
-
         }
 
         /*public static void HandleQueuedPackets()
@@ -96,7 +92,6 @@ namespace FreePIE.Core.Plugins.VJoy
             catch (Exception e)
             {
                 Console.WriteLine("Excecption when trying to forward ffb packet {0}{1}{1}{2}", apd.packet.PacketType, Environment.NewLine, e.Message);
-                //throw;
             }
         }
 
@@ -107,6 +102,11 @@ namespace FreePIE.Core.Plugins.VJoy
         {
             foreach (var rd in registeredDevices)
                 rd?.Clear();
+        }
+
+        public static void Stop()
+        {
+            packetMapper.Stop();
         }
 
         [DllImport("vJoyInterface.dll", EntryPoint = "FfbRegisterGenCB", CallingConvention = CallingConvention.Cdecl)]

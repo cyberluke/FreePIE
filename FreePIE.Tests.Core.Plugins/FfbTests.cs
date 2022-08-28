@@ -39,14 +39,14 @@ namespace FreePIE.Tests.Core.Plugins
             var vJoyFfbControl = globals[vjoyIndex];
             var global = globals[index];
 
-            ThreadPool.QueueUserWorkItem(obj =>
+            /*ThreadPool.QueueUserWorkItem(obj =>
             {
                 vJoyGlobal.registerFfbDevice(global);
                 vJoyFfbControl.createEffect(1, FFBEType.ET_CONST, false, new[] {1, 0});
                 vJoyFfbControl.setConstantForce(1, 5000);
                 vJoyFfbControl.operateEffect(1, FreePIE.Core.Plugins.VJoy.EffectOperation.Start, 0);
 
-            });
+            });*/
 
             Thread.Sleep(5000); //Give the code sometime to send ffb data to real game device
 
