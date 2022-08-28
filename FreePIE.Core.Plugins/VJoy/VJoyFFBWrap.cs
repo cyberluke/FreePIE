@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
+using FreePIE.Core.Plugins.VJoy.PacketData;
 
 namespace FreePIE.Core.Plugins.VJoy
 {
@@ -13,11 +14,14 @@ namespace FreePIE.Core.Plugins.VJoy
         private delegate void FfbPacketAvailable(IntPtr returnedData, IntPtr userData);
         private static FfbPacketAvailable wrapper;
         private static bool isRegistered;
+        private static FFBPType lastPacketType;
+        private static FFBEType lastEffectType;
 
         private static readonly PacketMapper packetMapper = new PacketMapper();
         private static readonly HashSet<Device>[] registeredDevices = new HashSet<Device>[16];
         private static readonly ConcurrentQueue<IAction<IList<ICollection<Device>>>> queue = new ConcurrentQueue<IAction<IList<ICollection<Device>>>>();
         private static readonly BlockingCollection<IAction<IList<ICollection<Device>>>> queueWrapper;
+
 
         static VJoyFfbWrap()
         {
@@ -48,6 +52,8 @@ namespace FreePIE.Core.Plugins.VJoy
         {
             if (!isRegistered)
             {
+                //Console.SetOut(System.IO.TextWriter.Null);
+                //Console.SetError(System.IO.TextWriter.Null);
                 wrapper = OnFfbPacketAvailable; //needed to keep a reference!
                 _FfbRegisterGenCB(wrapper, IntPtr.Zero);
                 isRegistered = true;
@@ -62,32 +68,35 @@ namespace FreePIE.Core.Plugins.VJoy
         private static void OnFfbPacketAvailable(IntPtr data, IntPtr userData)
         {
             FfbPacket ffbPacket = new FfbPacket(data);
-            lock (ffbPacket)
-            {
-                Task.Run<String>(async () =>
-                    {
+            packetMapper.Enqueue(ffbPacket);
 
-                        ffbPacket.Init();
 
-                        var pa = packetMapper[ffbPacket.PacketType];
-                        if (pa != null)
-                        {
-                            IAction<IList<ICollection<Device>>> action = pa.Convert(ffbPacket);
-                            queueWrapper.Add(action);
-                        }
-                        await Task.Yield();
-                        return null;
-                    });
-
-            }
         }
 
-        public static void HandleQueuedPackets()
+        /*public static void HandleQueuedPackets()
         {
             IAction<IList<ICollection<Device>>> action = null;
             while (queueWrapper.TryTake(out action))
             {
                 action.Call(registeredDevices);
+            }
+        }*/
+
+        public static void ExecuteOnRegisteredDevices<T>(AsyncPacketData<T> apd)
+                where T : IFfbPacketData
+        {
+            try
+            {
+                Console.WriteLine("Receive->process delay: {0:N3}ms", (DateTime.Now - apd.timestamp).TotalMilliseconds);
+
+                Console.WriteLine("Forwarding {0} to all joystick(s) registered for vJoy device {1}", apd.packet.PacketType, apd.packet.DeviceId);
+                foreach (var dev in registeredDevices[apd.packet.DeviceId - 1])
+                    apd.action(dev, apd.convertedPacket);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Excecption when trying to forward ffb packet {0}{1}{1}{2}", apd.packet.PacketType, Environment.NewLine, e.Message);
+                //throw;
             }
         }
 

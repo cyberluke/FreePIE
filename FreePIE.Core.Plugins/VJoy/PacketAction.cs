@@ -12,7 +12,8 @@ namespace FreePIE.Core.Plugins.VJoy
 
     public abstract class PacketAction
     {
-        public abstract IAction<IList<ICollection<Device>>> Convert(FfbPacket packet);
+
+        public abstract IAsyncAction Convert(FfbPacket packet);
     }
 
     /// <summary>
@@ -28,29 +29,40 @@ namespace FreePIE.Core.Plugins.VJoy
             action = act;
         }
 
-        public override IAction<IList<ICollection<Device>>> Convert(FfbPacket packet)
+        public override IAsyncAction Convert(FfbPacket packet)
         {
-            return new AsyncPacketData<T>(action, packet);
+            //currently converting it anyway, so the packet is still logged to console. If there's no action, return null so nothing'll be enqueued.
+            var p = new AsyncPacketData<T>(action, packet);
+            if (action == null)
+                return null;
+            else
+                return p;
         }
     }
 
-    public class AsyncPacketData<T> : PacketAction<T>, IAction<IList<ICollection<Device>>>
+    public class AsyncPacketData<T> : PacketAction<T>, IAsyncAction
             where T : IFfbPacketData
     {
         public readonly FfbPacket packet;
-        public readonly T convertedPacket;
-        private readonly DateTime timestamp;
+        public T convertedPacket;
+        public readonly DateTime timestamp;
 
         public AsyncPacketData(Action<Device, T> a, FfbPacket p) : base(a)
         {
             timestamp = DateTime.Now;
             packet = p;
-            convertedPacket = (T) p.GetPacketData(p.PacketType);
             // If it breaks here it means incorrect conversion between PacketMapper definition
             // and FfbPacket.GetPacketData() method
         }
 
-        public void Call(IList<ICollection<Device>> registeredDevices)
+        public void Call()
+        {
+            packet.Init();
+            convertedPacket = (T)packet.GetPacketData(packet.PacketType);
+            VJoyFfbWrap.ExecuteOnRegisteredDevices(this);
+        }
+
+        /*public void Call(IList<ICollection<Device>> registeredDevices)
         {
             //DEBUG: print useful information
             Console.WriteLine("----------------------");
@@ -72,6 +84,6 @@ namespace FreePIE.Core.Plugins.VJoy
                 }
             } else
                 Console.WriteLine("No forwarding action defined");
-        }
+        }*/
     }
 }

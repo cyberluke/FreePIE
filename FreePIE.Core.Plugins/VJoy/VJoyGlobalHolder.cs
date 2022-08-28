@@ -8,7 +8,7 @@ namespace FreePIE.Core.Plugins.VJoy
 {
     public class VJoyGlobalHolder : IDisposable
     {
-        private static readonly vJoy Joystick = new vJoy();
+        private static readonly vJoy Joystick = VJoyUtils.Joystick;
         private readonly Dictionary<HID_USAGES, bool> enabledAxis;
         private readonly Dictionary<HID_USAGES, int> currentAxisValue;
 

@@ -1,6 +1,7 @@
 ﻿using FreePIE.Core.Plugins.VJoy.PacketData;
 using System;
 using System.Runtime.InteropServices;
+using System.Text;
 using vJoyInterfaceWrap;
 
 namespace FreePIE.Core.Plugins.VJoy
@@ -10,62 +11,63 @@ namespace FreePIE.Core.Plugins.VJoy
     /// </summary>
     public class FfbPacket
     {
-        public enum CommandType : int
+        /// <summary>
+        /// HID descriptor type: feature or report
+        /// </summary>
+        private enum CommandType : int
         {
             IOCTL_HID_SET_FEATURE = 0xB0191,
             IOCTL_HID_WRITE_REPORT = 0xB000F
         }
-
+        /// <summary>
+        /// Aligned struct for marshaling of raw packets back to C#
+        /// </summary>
         [StructLayout(LayoutKind.Sequential)]
-        public struct InternalFfbPacket
+        private struct InternalFfbPacket
         {
             public int DataSize;
             public CommandType Command;
             public IntPtr PtrToData;
         }
-
-        public InternalFfbPacket packet;
+        GCHandle _DataPtr;
+        GCHandle _PacketPtr;
+        byte[] newData;
+        InternalFfbPacket inMemoryPacket;
         public IntPtr packetPtrCopy;
 
         public int DeviceId;
         public FFBPType PacketType;
         public int BlockIndex;
 
-        Byte[] _Data = new byte[0];
-        GCHandle _DataPtr;
-
-        ~FfbPacket()
-        {
-            Free();
-        }
-
-        protected void Free()
-        {
-            Marshal.FreeHGlobal(packetPtrCopy);
-            packetPtrCopy = IntPtr.Zero;
-            _DataPtr.Free();
-        }
-
         public FfbPacket(IntPtr packetPtr)
         {
-            //copy ffb packet to managed structure
-            packet = (InternalFfbPacket)Marshal.PtrToStructure(packetPtr, typeof(InternalFfbPacket));
-
-            _Data = new byte[packet.DataSize];
-            Marshal.Copy(packet.PtrToData, _Data, 0, (Int32)packet.DataSize);
-
-            // Convert object to pointer
-            _DataPtr = GCHandle.Alloc(_Data, GCHandleType.Pinned);
-            packet.PtrToData = _DataPtr.AddrOfPinnedObject();
-            packetPtrCopy = Marshal.AllocHGlobal(Marshal.SizeOf(packet));
-            Marshal.StructureToPtr(packet, packetPtrCopy, false);
+            ClonePacket(packetPtr);
         }
 
-        public void Init() { 
+        public void ClonePacket(IntPtr data)
+        {
+            unsafe
+            {
+                InternalFfbPacket* FfbData = (InternalFfbPacket*)data;
+                int size = FfbData->DataSize;
+                int command = (int)FfbData->Command;
+                byte* bytes = (byte*)FfbData->PtrToData;
+                inMemoryPacket = new InternalFfbPacket();
+                inMemoryPacket.DataSize = size;
+                inMemoryPacket.Command = FfbData->Command;
+                newData = new byte[size];
+                Marshal.Copy(FfbData->PtrToData, newData, 0, (Int32)size);
+                FFBPType type = FFBPType.PT_STATEREP;            
+                VJoyUtils.Joystick.Ffb_h_Type(data, ref type);
+                PacketType = type;
+            }
+        }
 
-            //A packet contains only a tiny bit of information, and a pointer to the actual FFB data which is interesting as well.   
-            if (packet.DataSize < 10)
-                throw new Exception(string.Format("DataSize incorrect: {0} (should be at least 10 bytes)", packet.DataSize));
+        public void Init() {
+            _DataPtr = GCHandle.Alloc(newData, GCHandleType.Pinned);
+            inMemoryPacket.PtrToData = _DataPtr.AddrOfPinnedObject();
+            _PacketPtr = GCHandle.Alloc(inMemoryPacket, GCHandleType.Pinned);
+            packetPtrCopy = _PacketPtr.AddrOfPinnedObject();
 
             //Read out the first two bytes (into the base packetData class), so we can fill out the 'important' information
             uint effectId = 0;
@@ -77,21 +79,7 @@ namespace FreePIE.Core.Plugins.VJoy
             DeviceId = (int)deviceId;
             if (DeviceId < 1 || DeviceId > 16)
                 throw new Exception(string.Format("DeviceID out of range: {0} (should be inbetween 1 and 16)", DeviceId));
-
-            FFBPType type = FFBPType.PT_STATEREP;            
-            VJoyUtils.Joystick.Ffb_h_Type(packetPtrCopy, ref type);
-
-            PacketType = type;
-        }
-
-        public byte[] Data
-        {
-            get
-            {
-                byte[] outBuffer = new byte[packet.DataSize];
-                Marshal.Copy(packet.PtrToData, outBuffer, 0, packet.DataSize);//last 8 bytes are not interesting? (haven't seen them in use anywhere anyway)
-                return outBuffer;
-            }
+                
         }
 
         public IFfbPacketData GetPacketData(FFBPType packetType)
@@ -212,19 +200,10 @@ namespace FreePIE.Core.Plugins.VJoy
             }
         }
 
-        public void CopyPacketData<T>(T originalPacket)
-        where T : IFfbPacketData
-        {
-            Marshal.PtrToStructure(packet.PtrToData, originalPacket);
-        }
-
         public override string ToString()
         {
-            return string.Format("DataSize: {1}, CMD: {2}{0}{3}{0}BlockIdx: {4}{0}Device ID: {5}{0}Packet type: {6}",
+            return string.Format("BlockIdx: {1}{0}Device ID: {2}{0}Packet type: {3}",
                 Environment.NewLine,
-                packet.DataSize,
-                packet.Command,
-                Data.ToHexString(),
                 BlockIndex,
                 DeviceId,
                 PacketType);

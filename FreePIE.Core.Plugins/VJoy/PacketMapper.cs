@@ -1,9 +1,11 @@
-﻿using FreePIE.Core.Plugins.VJoy.PacketData;
+﻿using FreePIE.Core.Plugins.Dx;
+using FreePIE.Core.Plugins.VJoy.PacketData;
 using System;
+using System.Collections.Generic;
 
 namespace FreePIE.Core.Plugins.VJoy
 {
-    public class PacketMapper
+    public class PacketMapper : AsyncActionRunner<IAsyncAction>
     {
         private PacketAction[] mapArr;
         public PacketMapper()
@@ -17,6 +19,23 @@ namespace FreePIE.Core.Plugins.VJoy
         {
             get { return mapArr[(int)pt]; }
             set { mapArr[(int)pt] = value; }
+        }
+
+        public void Enqueue(FfbPacket packet)
+        {
+            var pa = this[packet.PacketType];
+            if (pa != null)
+            {
+                IAsyncAction action = pa.Convert(packet);
+                if (action != null)
+                {
+                    Enqueue(action);
+                }
+            }
+            else
+            {
+                Console.Error.WriteLine("No packet action for {0}!", packet.PacketType);
+            }
         }
 
         private void SetupDefaultMap2()
@@ -50,7 +69,7 @@ namespace FreePIE.Core.Plugins.VJoy
             this[FFBPType.PT_CTRLREP] = null;
             // Usage Device Gain Report
             //this[FFBPType.PT_GAINREP] = new PacketAction<DeviceGainPacket>((d, p) => d.Gain = p.NormalizedGain);
-            this[FFBPType.PT_GAINREP] = new PacketAction<DeviceGainPacket>((d, p) => { d.Gain = p.NormalizedGain < 1500 ? 1500 : d.Gain = p.NormalizedGain; });
+            this[FFBPType.PT_GAINREP] = new PacketAction<DeviceGainPacket>((d, p) => { d.Gain = p.NormalizedGain < 5000 ? 5000 : d.Gain = p.NormalizedGain; });
             // Usage Set Custom Force Report
             this[FFBPType.PT_SETCREP] = new PacketAction<BasePacket>(null);
 
@@ -97,7 +116,7 @@ namespace FreePIE.Core.Plugins.VJoy
             this[FFBPType.PT_CTRLREP] = new PacketAction<PIDDeviceControlPacket>(null);
             // Usage Device Gain Report
             //this[FFBPType.PT_GAINREP] = new PacketAction<DeviceGainPacket>((d, p) => d.Gain = p.NormalizedGain);
-            this[FFBPType.PT_GAINREP] = new PacketAction<DeviceGainPacket>((d, p) => d.Gain = 5000);
+            this[FFBPType.PT_GAINREP] = new PacketAction<DeviceGainPacket>((d, p) => { d.Gain = p.NormalizedGain < 1500 ? 1500 : d.Gain = p.NormalizedGain; });
             // Usage Set Custom Force Report
             this[FFBPType.PT_SETCREP] = new PacketAction<BasePacket>(null);
 
