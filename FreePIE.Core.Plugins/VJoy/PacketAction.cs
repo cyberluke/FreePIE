@@ -2,6 +2,7 @@
 using FreePIE.Core.Plugins.VJoy.PacketData;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace FreePIE.Core.Plugins.VJoy
 {
@@ -51,14 +52,23 @@ namespace FreePIE.Core.Plugins.VJoy
         {
             timestamp = DateTime.Now;
             packet = p;
-            // If it breaks here it means incorrect conversion between PacketMapper definition
-            // and FfbPacket.GetPacketData() method
         }
 
         public void Call()
         {
+            Task.Run<String>(async () =>
+            {
+                Console.WriteLine("Receive->process delay: {0:N3}ms", (DateTime.Now - this.timestamp).TotalMilliseconds);
+                await Task.Yield();
+                return null;
+            });
             packet.Init();
             convertedPacket = (T)packet.GetPacketData(packet.PacketType);
+            // If it breaks here it means incorrect conversion between PacketMapper definition
+            // and FfbPacket.GetPacketData() method
+
+
+            Console.WriteLine("Forwarding {0} to all joystick(s) registered for vJoy device {1}", this.packet.PacketType, this.packet.DeviceId);
             VJoyFfbWrap.ExecuteOnRegisteredDevices(this);
         }
 
