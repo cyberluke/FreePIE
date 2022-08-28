@@ -24,6 +24,7 @@ namespace FreePIE.Core.Plugins.VJoy
         public void RegisterFfbDevice(Device dev)
         {
             if (!FfbEnabled) throw new NotSupportedException("This VJoy device does not have FFB enabled");
+
             VJoyFfbWrap.RegisterDevice((int)Index, dev);
         }
 

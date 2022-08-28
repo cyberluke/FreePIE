@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Collections.Concurrent;
-using vJoyInterfaceWrap;
+using System.Threading.Tasks;
 
 namespace FreePIE.Core.Plugins.VJoy
 {
@@ -61,20 +61,34 @@ namespace FreePIE.Core.Plugins.VJoy
         /// <param name="userData"></param>
         private static void OnFfbPacketAvailable(IntPtr data, IntPtr userData)
         {
-
             FfbPacket ffbPacket = new FfbPacket(data);
-            var pa = packetMapper[ffbPacket.PacketType];
-            if (pa != null)
-                queueWrapper.Add(pa.Convert(ffbPacket));
-            //else
-            //Console.WriteLine("No packet action for {0}", ffbPacket.PacketType);
+            lock (ffbPacket)
+            {
+                Task.Run<String>(async () =>
+                    {
+
+                        ffbPacket.Init();
+
+                        var pa = packetMapper[ffbPacket.PacketType];
+                        if (pa != null)
+                        {
+                            IAction<IList<ICollection<Device>>> action = pa.Convert(ffbPacket);
+                            queueWrapper.Add(action);
+                        }
+                        await Task.Yield();
+                        return null;
+                    });
+
+            }
         }
 
         public static void HandleQueuedPackets()
         {
             IAction<IList<ICollection<Device>>> action = null;
             while (queueWrapper.TryTake(out action))
+            {
                 action.Call(registeredDevices);
+            }
         }
 
         /// <summary>

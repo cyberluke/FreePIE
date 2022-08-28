@@ -1,6 +1,7 @@
 ﻿using FreePIE.Core.Plugins.VJoy.PacketData;
 using System;
 using System.Runtime.InteropServices;
+using vJoyInterfaceWrap;
 
 namespace FreePIE.Core.Plugins.VJoy
 {
@@ -24,17 +25,43 @@ namespace FreePIE.Core.Plugins.VJoy
         }
 
         public InternalFfbPacket packet;
-        protected IntPtr packetPtrCopy;
+        public IntPtr packetPtrCopy;
 
-        public int DeviceId { get; }
-        public FFBPType PacketType { get; }
-        public int BlockIndex { get; }
+        public int DeviceId;
+        public FFBPType PacketType;
+        public int BlockIndex;
+
+        Byte[] _Data = new byte[0];
+        GCHandle _DataPtr;
+
+        ~FfbPacket()
+        {
+            Free();
+        }
+
+        protected void Free()
+        {
+            Marshal.FreeHGlobal(packetPtrCopy);
+            packetPtrCopy = IntPtr.Zero;
+            _DataPtr.Free();
+        }
 
         public FfbPacket(IntPtr packetPtr)
         {
             //copy ffb packet to managed structure
             packet = (InternalFfbPacket)Marshal.PtrToStructure(packetPtr, typeof(InternalFfbPacket));
-            packetPtrCopy = packetPtr;
+
+            _Data = new byte[packet.DataSize];
+            Marshal.Copy(packet.PtrToData, _Data, 0, (Int32)packet.DataSize);
+
+            // Convert object to pointer
+            _DataPtr = GCHandle.Alloc(_Data, GCHandleType.Pinned);
+            packet.PtrToData = _DataPtr.AddrOfPinnedObject();
+            packetPtrCopy = Marshal.AllocHGlobal(Marshal.SizeOf(packet));
+            Marshal.StructureToPtr(packet, packetPtrCopy, false);
+        }
+
+        public void Init() { 
 
             //A packet contains only a tiny bit of information, and a pointer to the actual FFB data which is interesting as well.   
             if (packet.DataSize < 10)
