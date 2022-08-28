@@ -29,15 +29,25 @@ namespace FreePIE.Core.Plugins.VJoy
             public CommandType Command;
             public IntPtr PtrToData;
         }
-        GCHandle _DataPtr;
+        //GCHandle _DataPtr;
         GCHandle _PacketPtr;
-        byte[] newData;
-        InternalFfbPacket inMemoryPacket;
-        public IntPtr packetPtrCopy;
+        private unsafe byte[] newData;
+        private unsafe IntPtr packetPtrCopy;
+        private unsafe InternalFfbPacket inMemoryPacket;
 
         public int DeviceId;
         public FFBPType PacketType;
         public int BlockIndex;
+
+        ~FfbPacket()
+        {
+            newData = null;
+            packetPtrCopy = IntPtr.Zero;
+            inMemoryPacket.PtrToData = IntPtr.Zero;
+            if (_PacketPtr.IsAllocated)
+                _PacketPtr.Free();
+
+        }
 
         public FfbPacket(IntPtr packetPtr)
         {
@@ -56,16 +66,21 @@ namespace FreePIE.Core.Plugins.VJoy
                 inMemoryPacket.DataSize = size;
                 inMemoryPacket.Command = FfbData->Command;
                 newData = new byte[size];
-                Marshal.Copy(FfbData->PtrToData, newData, 0, (Int32)size);
+                for (int i = 0; i < size; i++)
+                {
+                    newData[i] = bytes[i];
+                }
                 FFBPType type = FFBPType.PT_STATEREP;            
                 VJoyUtils.Joystick.Ffb_h_Type(data, ref type);
                 PacketType = type;
+                
             }
         }
 
-        public void Init() {
-            _DataPtr = GCHandle.Alloc(newData, GCHandleType.Pinned);
-            inMemoryPacket.PtrToData = _DataPtr.AddrOfPinnedObject();
+        unsafe public void Init() {
+            fixed (byte* newData2 = newData) {
+                inMemoryPacket.PtrToData = (IntPtr)newData2;
+            }
             _PacketPtr = GCHandle.Alloc(inMemoryPacket, GCHandleType.Pinned);
             packetPtrCopy = _PacketPtr.AddrOfPinnedObject();
 
