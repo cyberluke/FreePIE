@@ -123,8 +123,8 @@ namespace FreePIE.Core.Plugins.Dx
 
             effectParams[blockIndex].Parameters = new RampForce();
 
-            effectParams[blockIndex].Parameters.AsRampForce().Start = start;
-            effectParams[blockIndex].Parameters.AsRampForce().End = end;
+            effectParams[blockIndex].Parameters.AsRampForce().Start = start * 1000;
+            effectParams[blockIndex].Parameters.AsRampForce().End = end * 1000;
 
             if (Effects[blockIndex] != null && !Effects[blockIndex].Disposed)
             {
