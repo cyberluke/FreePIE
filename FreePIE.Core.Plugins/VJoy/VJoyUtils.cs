@@ -23,6 +23,27 @@ namespace FreePIE.Core.Plugins.VJoy
             return ((byte)InByte * 100) / 255;
         }
 
+        /*
+         * 		
+        _tprintf("\n >> Ramp Start: %d", TwosCompByte2Int(RampEffect.Start) * 10000 / 127);
+		_tprintf("\n >> Ramp End: %d", TwosCompByte2Int(RampEffect.End) * 10000 / 127);
+         */
+        // Convert One-Byte 2's complement input to integer
+        /*int TwosCompByte2Int(byte input)
+        {
+            int tmp;
+            byte inv = ~input;
+            byte isNeg = input >> 7;
+            if (isNeg)
+            {
+                tmp = (int)(inv);
+                tmp = -1 * tmp;
+                return tmp;
+            }
+            else
+                return (int)input;
+        }*/
+
         // Convert Effect type to String
         public static bool EffectType2Str(FFBEType Type, out string Str)
         {
