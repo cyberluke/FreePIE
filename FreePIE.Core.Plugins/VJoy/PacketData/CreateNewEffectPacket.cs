@@ -18,7 +18,7 @@ namespace FreePIE.Core.Plugins.VJoy.PacketData
             return string.Format("EffectType: {0}", Type);
         }
 
-        public void fromPacket(IntPtr data)
+        public void fromPacket(IntPtr data, int cmd)
         {
             throw new NotImplementedException();
         }

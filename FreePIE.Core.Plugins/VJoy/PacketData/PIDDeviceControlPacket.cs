@@ -17,10 +17,10 @@ namespace FreePIE.Core.Plugins.VJoy.PacketData
             return string.Format("PIDDeviceControl: {0}", DeviceControl); 
         }
 
-        public void fromPacket(IntPtr data)
+        public void fromPacket(IntPtr data, int cmd)
         {
             DeviceControl = new FFB_CTRL();
-            if ((uint)ERROR.ERROR_SUCCESS != VJoyUtils.Joystick.Ffb_h_DevCtrl(data, ref DeviceControl))
+            if ((uint)ERROR.ERROR_SUCCESS != VJoyUtils.Joystick.Ffb_dp_DevCtrl(data, ref DeviceControl, cmd))
             {
                 throw new Exception("Could not parse incoming packet as Constant Report from VJoy.");
             }

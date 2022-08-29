@@ -17,10 +17,10 @@ namespace FreePIE.Core.Plugins.VJoy.PacketData
             return string.Format("Magnitude: {0}", Effect.Magnitude);
         }
 
-        public void fromPacket(IntPtr data)
+        public void fromPacket(IntPtr data, int cmd)
         {
             Effect = new vJoy.FFB_EFF_CONSTANT();
-            if ((uint)ERROR.ERROR_SUCCESS != VJoyUtils.Joystick.Ffb_h_Eff_Constant(data, ref Effect))
+            if ((uint)ERROR.ERROR_SUCCESS != VJoyUtils.Joystick.Ffb_dp_Eff_Constant(data, ref Effect, cmd))
             {
                 throw new Exception("Could not parse incoming packet as Constant Report from VJoy.");
             }

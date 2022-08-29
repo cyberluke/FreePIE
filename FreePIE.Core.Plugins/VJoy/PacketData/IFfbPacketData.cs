@@ -5,7 +5,7 @@ namespace FreePIE.Core.Plugins.VJoy.PacketData
 {
     public interface IFfbPacketData
     {
-        void fromPacket(IntPtr data);
+        void fromPacket(IntPtr data, int cmd);
     }
 
     public struct BasePacket : IFfbPacketData
@@ -19,7 +19,7 @@ namespace FreePIE.Core.Plugins.VJoy.PacketData
             return "Base packet";
         }
 
-        public void fromPacket(IntPtr data)
+        public void fromPacket(IntPtr data, int cmd)
         {
             throw new NotImplementedException();
         }

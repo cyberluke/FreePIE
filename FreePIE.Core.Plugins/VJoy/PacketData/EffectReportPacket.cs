@@ -13,10 +13,10 @@ namespace FreePIE.Core.Plugins.VJoy.PacketData
         public vJoy.FFB_EFF_REPORT Effect;
 
 
-        public void fromPacket(IntPtr data)
+        public void fromPacket(IntPtr data, int cmd)
         {
             Effect = new vJoy.FFB_EFF_REPORT();
-            if ((uint)ERROR.ERROR_SUCCESS != VJoyUtils.Joystick.Ffb_h_Eff_Report(data, ref Effect))
+            if ((uint)ERROR.ERROR_SUCCESS != VJoyUtils.Joystick.Ffb_dp_Eff_Report(data, ref Effect, cmd))
             {
                 throw new Exception("Could not parse incoming packet as EffectReport from VJoy.");
             }

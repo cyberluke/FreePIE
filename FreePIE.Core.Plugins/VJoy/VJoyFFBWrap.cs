@@ -16,6 +16,7 @@ namespace FreePIE.Core.Plugins.VJoy
         private static bool isRegistered;
         private static FFBPType lastPacketType;
         private static FFBEType lastEffectType;
+        private static FfbPacket ffbPacket;
         private static readonly PacketMapper packetMapper = new PacketMapper();
         private static readonly HashSet<Device>[] registeredDevices = new HashSet<Device>[16];
         private static readonly ConcurrentQueue<IAction<IList<ICollection<Device>>>> queue = new ConcurrentQueue<IAction<IList<ICollection<Device>>>>();
@@ -65,27 +66,15 @@ namespace FreePIE.Core.Plugins.VJoy
         /// <param name="userData"></param>
         private static void OnFfbPacketAvailable(IntPtr data, IntPtr userData)
         {
-            FfbPacket ffbPacket = new FfbPacket(data);
+            ffbPacket = new FfbPacket(data);
             packetMapper.Enqueue(ffbPacket);
         }
-
-        /*public static void HandleQueuedPackets()
-        {
-            IAction<IList<ICollection<Device>>> action = null;
-            while (queueWrapper.TryTake(out action))
-            {
-                action.Call(registeredDevices);
-            }
-        }*/
 
         public static void ExecuteOnRegisteredDevices<T>(AsyncPacketData<T> apd)
                 where T : IFfbPacketData
         {
             try
             {
-                Console.WriteLine("Receive->process delay: {0:N3}ms", (DateTime.Now - apd.timestamp).TotalMilliseconds);
-
-                Console.WriteLine("Forwarding {0} to all joystick(s) registered for vJoy device {1}", apd.packet.PacketType, apd.packet.DeviceId);
                 foreach (var dev in registeredDevices[apd.packet.DeviceId - 1])
                     apd.action(dev, apd.convertedPacket);
             }
@@ -104,7 +93,7 @@ namespace FreePIE.Core.Plugins.VJoy
                 rd?.Clear();
         }
 
-        public static void Stop()
+        public static void Dispose()
         {
             packetMapper.Stop();
         }

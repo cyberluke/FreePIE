@@ -149,7 +149,7 @@ namespace FreePIE.Core.Plugins.VJoy
 
         public void Dispose()
         {
-            VJoyFfbWrap.Stop();
+            VJoyFfbWrap.Dispose();
             Joystick.RelinquishVJD(Index);
         }
     }

@@ -43,7 +43,6 @@ namespace FreePIE.Core.Plugins
 
         public override void DoBeforeNextExecute()
         {
-            //VJoyFfbWrap.HandleQueuedPackets();
             holders.ForEach(h => h.SendPressed());
         }
 

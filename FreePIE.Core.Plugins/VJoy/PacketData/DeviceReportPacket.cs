@@ -39,7 +39,7 @@ namespace FreePIE.Core.Plugins.VJoy.PacketData
             return sb.ToString();
         }
 
-        public void fromPacket(IntPtr data)
+        public void fromPacket(IntPtr data, int cmd)
         {
             Effect = new vJoy.FFB_DEVICE_PID();
             if ((uint)ERROR.ERROR_SUCCESS != VJoyUtils.Joystick.FfbReadPID((uint)DeviceId, ref Effect))

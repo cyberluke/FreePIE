@@ -14,7 +14,7 @@ namespace FreePIE.Core.Plugins.VJoy
     public abstract class PacketAction
     {
 
-        public abstract IAsyncAction Convert(FfbPacket packet);
+        public abstract IPacketAction Convert(FfbPacket packet);
     }
 
     /// <summary>
@@ -30,7 +30,7 @@ namespace FreePIE.Core.Plugins.VJoy
             action = act;
         }
 
-        public override IAsyncAction Convert(FfbPacket packet)
+        public override IPacketAction Convert(FfbPacket packet)
         {
             //currently converting it anyway, so the packet is still logged to console. If there's no action, return null so nothing'll be enqueued.
             var p = new AsyncPacketData<T>(action, packet);
@@ -41,7 +41,7 @@ namespace FreePIE.Core.Plugins.VJoy
         }
     }
 
-    public class AsyncPacketData<T> : PacketAction<T>, IAsyncAction
+    public class AsyncPacketData<T> : PacketAction<T>, IPacketAction
             where T : IFfbPacketData
     {
         public readonly FfbPacket packet;
@@ -54,22 +54,22 @@ namespace FreePIE.Core.Plugins.VJoy
             packet = p;
         }
 
-        public void Call()
+        private void Call()
         {
-            Task.Run<String>(async () =>
-            {
-                Console.WriteLine("Receive->process delay: {0:N3}ms", (DateTime.Now - this.timestamp).TotalMilliseconds);
-                await Task.Yield();
-                return null;
-            });
-            packet.Init();
+            //packet.Init();
             convertedPacket = (T)packet.GetPacketData(packet.PacketType);
             // If it breaks here it means incorrect conversion between PacketMapper definition
             // and FfbPacket.GetPacketData() method
-
-
-            Console.WriteLine("Forwarding {0} to all joystick(s) registered for vJoy device {1}", this.packet.PacketType, this.packet.DeviceId);
+            Console.WriteLine(convertedPacket.ToString());
             VJoyFfbWrap.ExecuteOnRegisteredDevices(this);
+            Console.WriteLine("Receive->process delay: {0:N3}ms", (DateTime.Now - this.timestamp).TotalMilliseconds);
+            Console.WriteLine("Forwarding {0} to all joystick(s) registered for vJoy device {1}", this.packet.PacketType, this.packet.DeviceId);
+        }
+
+        public void Call(InternalFfbPacket inMemoryPacket)
+        {
+            packet.Init(inMemoryPacket);
+            Call();
         }
 
         /*public void Call(IList<ICollection<Device>> registeredDevices)

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace FreePIE.Core.Plugins.VJoy
 {
-    public class PacketMapper : AsyncActionRunner<IAsyncAction>
+    public class PacketMapper : BackgroundActionRunner<IPacketAction>
     {
         private PacketAction[] mapArr;
         public PacketMapper()
@@ -26,7 +26,7 @@ namespace FreePIE.Core.Plugins.VJoy
             var pa = this[packet.PacketType];
             if (pa != null)
             {
-                IAsyncAction action = pa.Convert(packet);
+                IPacketAction action = pa.Convert(packet);
                 if (action != null)
                 {
                     Enqueue(action);
@@ -69,7 +69,7 @@ namespace FreePIE.Core.Plugins.VJoy
             this[FFBPType.PT_CTRLREP] = null;
             // Usage Device Gain Report
             //this[FFBPType.PT_GAINREP] = new PacketAction<DeviceGainPacket>((d, p) => d.Gain = p.NormalizedGain);
-            this[FFBPType.PT_GAINREP] = new PacketAction<DeviceGainPacket>((d, p) => { d.Gain = p.NormalizedGain < 5000 ? 5000 : d.Gain = p.NormalizedGain; });
+            this[FFBPType.PT_GAINREP] = new PacketAction<DeviceGainPacket>((d, p) => { d.Gain = p.NormalizedGain < 3000 ? 3000 : d.Gain = p.NormalizedGain; });
             // Usage Set Custom Force Report
             this[FFBPType.PT_SETCREP] = new PacketAction<BasePacket>(null);
 

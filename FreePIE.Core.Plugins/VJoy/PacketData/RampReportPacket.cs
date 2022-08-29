@@ -21,10 +21,10 @@ namespace FreePIE.Core.Plugins.VJoy.PacketData
             return sb.ToString();
         }
 
-        public void fromPacket(IntPtr data)
+        public void fromPacket(IntPtr data, int cmd)
         {
             Effect = new vJoy.FFB_EFF_RAMP();
-            if ((uint)ERROR.ERROR_SUCCESS != VJoyUtils.Joystick.Ffb_h_Eff_Ramp(data, ref Effect))
+            if ((uint)ERROR.ERROR_SUCCESS != VJoyUtils.Joystick.Ffb_dp_Eff_Ramp(data, ref Effect, cmd))
             {
                 throw new Exception("Could not parse incoming packet as Constant Report from VJoy.");
             }
