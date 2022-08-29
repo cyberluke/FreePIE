@@ -184,22 +184,6 @@ namespace FreePIE.Core.Plugins.Dx
 
         }
 
-        //TODO: add Set functions for the other types: SetPeriodicForce, SetContionSet (SetConditionalForce?), and SetRampForce
-
-        public void SendPacket(FfbPacket rawPacket)
-        {
-            ObjectData objectData = new ObjectData();
-            objectData.Instance = (int) rawPacket.packet.Command;
-
-           // Microsoft.DirectX.DirectInput.Button.NoTrigger
-
-            byte[] outBuffer = new byte[rawPacket.packet.DataSize];
-            Marshal.Copy(rawPacket.packet.PtrToData, outBuffer, 0, rawPacket.packet.DataSize - 8);
-
-            objectData.Data = rawPacket.packet.PtrToData.ToInt32();
-            joystick.SendData(new ObjectData[] { objectData }, false);
-        }
-
         public void SetEffectParams(EffectReportPacket er)
         {
             //This function is supposed to be a combination for multiple packets, because those packets are received in an unusual order (this is what I observed after testing with custom FFB code and games):
