@@ -11,41 +11,26 @@ namespace FreePIE.Core.Plugins.VJoy
     /// </summary>
     public class FfbPacket
     {
-        /// <summary>
-        /// HID descriptor type: feature or report
-        /// </summary>
-        private enum CommandType : int
-        {
-            IOCTL_HID_SET_FEATURE = 0xB0191,
-            IOCTL_HID_WRITE_REPORT = 0xB000F
-        }
-        /// <summary>
-        /// Aligned struct for marshaling of raw packets back to C#
-        /// </summary>
-        [StructLayout(LayoutKind.Sequential)]
-        private struct InternalFfbPacket
-        {
-            public int DataSize;
-            public CommandType Command;
-            public IntPtr PtrToData;
-        }
-        //GCHandle _DataPtr;
-        GCHandle _PacketPtr;
+
+        //GCHandle _PacketPtr;
         private unsafe byte[] newData;
-        private unsafe IntPtr packetPtrCopy;
-        private unsafe InternalFfbPacket inMemoryPacket;
+        //private unsafe IntPtr packetPtrCopy;
 
         public int DeviceId;
         public FFBPType PacketType;
         public int BlockIndex;
 
+        int size;
+        int cmd;
+        IntPtr packetPtrCopy;
+
         ~FfbPacket()
         {
             newData = null;
             packetPtrCopy = IntPtr.Zero;
-            inMemoryPacket.PtrToData = IntPtr.Zero;
+            /*inMemoryPacket.PtrToData = IntPtr.Zero;
             if (_PacketPtr.IsAllocated)
-                _PacketPtr.Free();
+                _PacketPtr.Free();*/
 
         }
 
@@ -59,12 +44,10 @@ namespace FreePIE.Core.Plugins.VJoy
             unsafe
             {
                 InternalFfbPacket* FfbData = (InternalFfbPacket*)data;
-                int size = FfbData->DataSize;
-                int command = (int)FfbData->Command;
+                size = FfbData->DataSize;
+                cmd = (int)FfbData->Command;
+
                 byte* bytes = (byte*)FfbData->PtrToData;
-                inMemoryPacket = new InternalFfbPacket();
-                inMemoryPacket.DataSize = size;
-                inMemoryPacket.Command = FfbData->Command;
                 newData = new byte[size];
                 for (int i = 0; i < size; i++)
                 {
@@ -72,29 +55,30 @@ namespace FreePIE.Core.Plugins.VJoy
                 }
                 FFBPType type = FFBPType.PT_STATEREP;            
                 VJoyUtils.Joystick.Ffb_h_Type(data, ref type);
-                PacketType = type;
-                
+                PacketType = type;                
             }
         }
 
-        unsafe public void Init() {
+        unsafe public void Init(InternalFfbPacket inMemoryPacket) {
+            inMemoryPacket.DataSize = size;
+            inMemoryPacket.Command = (cmd == (int)CommandType.IOCTL_HID_SET_FEATURE ? CommandType.IOCTL_HID_SET_FEATURE : CommandType.IOCTL_HID_WRITE_REPORT);
             fixed (byte* newData2 = newData) {
                 inMemoryPacket.PtrToData = (IntPtr)newData2;
             }
-            _PacketPtr = GCHandle.Alloc(inMemoryPacket, GCHandleType.Pinned);
-            packetPtrCopy = _PacketPtr.AddrOfPinnedObject();
+
+            packetPtrCopy = inMemoryPacket.PtrToData;
 
             //Read out the first two bytes (into the base packetData class), so we can fill out the 'important' information
             uint effectId = 0;
-            VJoyUtils.Joystick.Ffb_h_EffectBlockIndex(packetPtrCopy, ref effectId);
+            VJoyUtils.Joystick.Ffb_dp_EffectBlockIndex(packetPtrCopy, ref effectId, cmd);
             BlockIndex = (int) effectId;
 
             uint deviceId = 0;
-            VJoyUtils.Joystick.Ffb_h_DeviceID(packetPtrCopy, ref deviceId);
+            VJoyUtils.Joystick.Ffb_dp_DeviceID(packetPtrCopy, ref deviceId);
             DeviceId = (int)deviceId;
             if (DeviceId < 1 || DeviceId > 16)
                 throw new Exception(string.Format("DeviceID out of range: {0} (should be inbetween 1 and 16)", DeviceId));
-                
+               
         }
 
         public IFfbPacketData GetPacketData(FFBPType packetType)
@@ -106,21 +90,21 @@ namespace FreePIE.Core.Plugins.VJoy
                     effPacket.BlockIndex = BlockIndex;
                     effPacket.DeviceId = DeviceId;
                     effPacket.PacketType = packetType;
-                    effPacket.fromPacket(packetPtrCopy);
+                    effPacket.fromPacket(packetPtrCopy, cmd);
                     return effPacket;
                 case FFBPType.PT_CONSTREP:
                     ConstantForcePacket constPacket = new ConstantForcePacket();
                     constPacket.BlockIndex = BlockIndex;
                     constPacket.DeviceId = DeviceId;
                     constPacket.PacketType = packetType;
-                    constPacket.fromPacket(packetPtrCopy);
+                    constPacket.fromPacket(packetPtrCopy, cmd);
                     return constPacket;
                 case FFBPType.PT_EFOPREP:
                     EffectOperationPacket effOpPacket = new EffectOperationPacket();
                     effOpPacket.BlockIndex = BlockIndex;
                     effOpPacket.DeviceId = DeviceId;
                     effOpPacket.PacketType = packetType;
-                    effOpPacket.fromPacket(packetPtrCopy);
+                    effOpPacket.fromPacket(packetPtrCopy, cmd);
                     return effOpPacket;
                 case FFBPType.PT_BLKFRREP:
                     BasePacket blkPacket = new BasePacket();
@@ -145,28 +129,28 @@ namespace FreePIE.Core.Plugins.VJoy
                     periodicPacket.BlockIndex = BlockIndex;
                     periodicPacket.DeviceId = DeviceId;
                     periodicPacket.PacketType = packetType;
-                    periodicPacket.fromPacket(packetPtrCopy);
+                    periodicPacket.fromPacket(packetPtrCopy, cmd);
                     return periodicPacket;
                 case FFBPType.PT_ENVREP:
                     EnvelopeReportPacket envelopePacket = new EnvelopeReportPacket();
                     envelopePacket.BlockIndex = BlockIndex;
                     envelopePacket.DeviceId = DeviceId;
                     envelopePacket.PacketType = packetType;
-                    envelopePacket.fromPacket(packetPtrCopy);
+                    envelopePacket.fromPacket(packetPtrCopy, cmd);
                     return envelopePacket;
                 case FFBPType.PT_CONDREP:
                     ConditionReportPacket conditionPacket = new ConditionReportPacket();
                     conditionPacket.BlockIndex = BlockIndex;
                     conditionPacket.DeviceId = DeviceId;
                     conditionPacket.PacketType = packetType;
-                    conditionPacket.fromPacket(packetPtrCopy);
+                    conditionPacket.fromPacket(packetPtrCopy, cmd);
                     return conditionPacket;
                 case FFBPType.PT_RAMPREP:
                     RampReportPacket rampPacket = new RampReportPacket();
                     rampPacket.BlockIndex = BlockIndex;
                     rampPacket.DeviceId = DeviceId;
                     rampPacket.PacketType = packetType;
-                    rampPacket.fromPacket(packetPtrCopy);
+                    rampPacket.fromPacket(packetPtrCopy, cmd);
                     return rampPacket;
                 case FFBPType.PT_CSTMREP:
                     // Custom Force Data needs to be uncommented in VJoy source and should read correct
@@ -193,21 +177,21 @@ namespace FreePIE.Core.Plugins.VJoy
                     blkldPacket.BlockIndex = BlockIndex;
                     blkldPacket.DeviceId = DeviceId;
                     blkldPacket.PacketType = packetType;
-                    blkldPacket.fromPacket(packetPtrCopy);
+                    blkldPacket.fromPacket(packetPtrCopy, cmd);
                     return blkldPacket;
                 case FFBPType.PT_POOLREP:
                     DeviceReportPacket poolPacket = new DeviceReportPacket();
                     poolPacket.BlockIndex = BlockIndex;
                     poolPacket.DeviceId = DeviceId;
                     poolPacket.PacketType = packetType;
-                    poolPacket.fromPacket(packetPtrCopy);
+                    poolPacket.fromPacket(packetPtrCopy, cmd);
                     return poolPacket;
                 case FFBPType.PT_STATEREP:
                     DeviceReportPacket statePacket = new DeviceReportPacket();
                     statePacket.BlockIndex = BlockIndex;
                     statePacket.DeviceId = DeviceId;
                     statePacket.PacketType = packetType;
-                    statePacket.fromPacket(packetPtrCopy);
+                    statePacket.fromPacket(packetPtrCopy, cmd);
                     return statePacket;
                 default:
                     Console.WriteLine("Cannot get packet type, cannot create mapping for {0}", packetType.ToString());
