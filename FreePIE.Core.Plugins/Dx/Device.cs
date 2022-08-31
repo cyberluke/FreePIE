@@ -34,7 +34,7 @@ namespace FreePIE.Core.Plugins.Dx
             Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
 
             this.joystick = joystick;
-            SetRange(-10000, 10000);
+            SetRange(-1000, 1000);
             getPressedStrategy = new GetPressedStrategy<int>(GetDown);
 
             SupportsFfb = joystick.Capabilities.Flags.HasFlag(DeviceFlags.ForceFeedback);
@@ -123,8 +123,8 @@ namespace FreePIE.Core.Plugins.Dx
 
             effectParams[blockIndex].Parameters = new RampForce();
 
-            effectParams[blockIndex].Parameters.AsRampForce().Start = start * 1000;
-            effectParams[blockIndex].Parameters.AsRampForce().End = end * 1000;
+            effectParams[blockIndex].Parameters.AsRampForce().Start = start;
+            effectParams[blockIndex].Parameters.AsRampForce().End = end;
 
             if (Effects[blockIndex] != null && !Effects[blockIndex].Disposed)
             {
@@ -147,10 +147,10 @@ namespace FreePIE.Core.Plugins.Dx
             effectParams[blockIndex].Parameters.AsConditionSet().Conditions[lastConditionId].PositiveCoefficient = posCoeff;
             effectParams[blockIndex].Parameters.AsConditionSet().Conditions[lastConditionId].PositiveSaturation = posSatur;
 
-            /*if (Effects[blockIndex] != null && !Effects[blockIndex].Disposed)
+            if (Effects[blockIndex] != null && !Effects[blockIndex].Disposed)
             {
                 Effects[blockIndex].SetParameters(effectParams[blockIndex], EffectParameterFlags.TypeSpecificParameters);
-            }*/
+            }
         }
 
 
@@ -161,13 +161,13 @@ namespace FreePIE.Core.Plugins.Dx
             effectParams[blockIndex].Parameters = new PeriodicForce();
             effectParams[blockIndex].Parameters.AsPeriodicForce().Magnitude = magnitude;
             effectParams[blockIndex].Parameters.AsPeriodicForce().Offset = offset;
-            effectParams[blockIndex].Parameters.AsPeriodicForce().Period = period;
+            effectParams[blockIndex].Parameters.AsPeriodicForce().Period = period * 1000;
             effectParams[blockIndex].Parameters.AsPeriodicForce().Phase = phase;
 
-            /*if (Effects[blockIndex] != null && !Effects[blockIndex].Disposed)
+            if (Effects[blockIndex] != null && !Effects[blockIndex].Disposed)
             {
                 Effects[blockIndex].SetParameters(effectParams[blockIndex], EffectParameterFlags.TypeSpecificParameters);
-            }*/
+            }
         }
 
         public void SetConstantForce(int blockIndex, int magnitude)
@@ -177,10 +177,10 @@ namespace FreePIE.Core.Plugins.Dx
             effectParams[blockIndex].Parameters = GetTypeSpecificParameter(FFBEType.ET_CONST);
             effectParams[blockIndex].Parameters.AsConstantForce().Magnitude = magnitude;
 
-            /*if (Effects[blockIndex] != null && !Effects[blockIndex].Disposed)
+            if (Effects[blockIndex] != null && !Effects[blockIndex].Disposed)
             {
                 Effects[blockIndex].SetParameters(effectParams[blockIndex], EffectParameterFlags.TypeSpecificParameters);
-            }*/
+            }
 
         }
 
@@ -198,9 +198,9 @@ namespace FreePIE.Core.Plugins.Dx
             //angle is in 100th degrees, so if you want to express 90 degrees (vector pointing to the right) you'll have to enter 9000
             Console.WriteLine("Name: {0}", Name);
             Console.WriteLine("InstanceGuid: {0}", InstanceGuid);
-            var directions = er.Effect.Polar ? new int[] { er.Effect.Direction * 36000 / 255 } : new int[] { er.Effect.DirX, er.Effect.DirY };
+            var directions = er.Effect.Polar ? new int[] { er.Effect.Direction * 36000 / 255, 0 } : new int[] { er.Effect.DirX, er.Effect.DirY };
             //CreateEffect(er.BlockIndex, er.EffectType, er.Polar, directions, er.Duration, er.NormalizedGain, er.SamplePeriod, 0, er.TriggerBtn, er.TriggerRepeatInterval);
-            CreateEffect(er.BlockIndex, er.Effect.EffectType, er.Effect.Polar, directions, er.Effect.Duration*1000, er.NormalizedGain, er.Effect.SamplePrd * 1000, er.Effect.StartDelay * 1000, -1, 0);
+            CreateEffect(er.BlockIndex, er.Effect.EffectType, er.Effect.Polar, directions, er.Effect.Duration*1000, er.NormalizedGain, er.Effect.SamplePrd * 1000, er.Effect.StartDelay * 1000);
         }
 
         public void CreateTestEffect()
@@ -273,8 +273,14 @@ namespace FreePIE.Core.Plugins.Dx
                 {
                     Console.WriteLine("!!! WARNING: Effect Parameters are empty!");
                     effectParams[blockIndex].Parameters = GetTypeSpecificParameter(type);
+                    if (type.Equals(FFBEType.ET_RAMP))
+                    {
+                        // set default ramp force if app did not send (compat fix)
+                        setRamp(blockIndex, 10000, -10000);
+                    }
                     Effects[blockIndex] = new Effect(joystick, eGuid, effectParams[blockIndex]);
-                } else
+                }
+                else
                 {
                     Effects[blockIndex] = new Effect(joystick, eGuid, effectParams[blockIndex]);
                 }

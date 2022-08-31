@@ -28,6 +28,11 @@ namespace FreePIE.Core.Plugins.VJoy
             VJoyFfbWrap.RegisterDevice((int)Index, dev);
         }
 
+        ~VJoyGlobalHolder()
+        {
+            VJoyFfbWrap.Dispose();
+        }
+
         public VJoyGlobalHolder(uint index)
         {
             Index = index;
@@ -149,7 +154,6 @@ namespace FreePIE.Core.Plugins.VJoy
 
         public void Dispose()
         {
-            VJoyFfbWrap.Dispose();
             Joystick.RelinquishVJD(Index);
         }
     }
