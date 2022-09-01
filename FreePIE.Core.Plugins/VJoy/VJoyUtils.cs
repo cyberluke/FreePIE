@@ -23,27 +23,6 @@ namespace FreePIE.Core.Plugins.VJoy
             return ((byte)InByte * 100) / 255;
         }
 
-        /*
-         * 		
-        _tprintf("\n >> Ramp Start: %d", TwosCompByte2Int(RampEffect.Start) * 10000 / 127);
-		_tprintf("\n >> Ramp End: %d", TwosCompByte2Int(RampEffect.End) * 10000 / 127);
-         */
-        // Convert One-Byte 2's complement input to integer
-        /*int TwosCompByte2Int(byte input)
-        {
-            int tmp;
-            byte inv = ~input;
-            byte isNeg = input >> 7;
-            if (isNeg)
-            {
-                tmp = (int)(inv);
-                tmp = -1 * tmp;
-                return tmp;
-            }
-            else
-                return (int)input;
-        }*/
-
         // Convert Effect type to String
         public static bool EffectType2Str(FFBEType Type, out string Str)
         {
@@ -117,6 +96,34 @@ namespace FreePIE.Core.Plugins.VJoy
             }
 
             return highestValue;
+        }
+
+        const string Separator = ", ";
+
+        public static string FlagsEnumToString<T>(Enum e)
+        {
+            var str = new StringBuilder();
+
+            foreach (object i in Enum.GetValues(typeof(T)))
+            {
+                if (IsExactlyOneBitSet((int)i) &&
+                    e.HasFlag((Enum)i))
+                {
+                    str.Append((T)i + Separator);
+                }
+            }
+
+            if (str.Length > 0)
+            {
+                str.Length -= Separator.Length;
+            }
+
+            return str.ToString();
+        }
+
+        static bool IsExactlyOneBitSet(int i)
+        {
+            return i != 0 && (i & (i - 1)) == 0;
         }
     }
 }

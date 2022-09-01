@@ -12,27 +12,21 @@ namespace FreePIE.Core.Plugins.VJoy
     public class FfbPacket
     {
 
-        //GCHandle _PacketPtr;
         private unsafe byte[] newData;
-        //private unsafe IntPtr packetPtrCopy;
 
-        public int DeviceId;
-        public FFBPType PacketType;
-        public int BlockIndex;
+        private int deviceId;
+        private FFBPType packetType;
+        private int blockIndex;
 
         int size;
         int cmd;
         IntPtr packetPtrCopy;
 
-        ~FfbPacket()
+        /*~FfbPacket()
         {
             newData = null;
             packetPtrCopy = IntPtr.Zero;
-            /*inMemoryPacket.PtrToData = IntPtr.Zero;
-            if (_PacketPtr.IsAllocated)
-                _PacketPtr.Free();*/
-
-        }
+        }*/
 
         public FfbPacket(IntPtr packetPtr)
         {
@@ -57,6 +51,11 @@ namespace FreePIE.Core.Plugins.VJoy
                 VJoyUtils.Joystick.Ffb_h_Type(data, ref type);
                 PacketType = type;                
             }
+        }
+
+        public byte[] getRawData()
+        {
+            return newData;
         }
 
         unsafe public void Init(InternalFfbPacket inMemoryPacket) {
@@ -206,6 +205,45 @@ namespace FreePIE.Core.Plugins.VJoy
                 BlockIndex,
                 DeviceId,
                 PacketType);
+        }
+
+        public int DeviceId
+        {
+            get
+            {
+                return deviceId;
+            }
+
+            set
+            {
+                deviceId = value;
+            }
+        }
+
+        public FFBPType PacketType
+        {
+            get
+            {
+                return packetType;
+            }
+
+            set
+            {
+                packetType = value;
+            }
+        }
+
+        public int BlockIndex
+        {
+            get
+            {
+                return blockIndex;
+            }
+
+            set
+            {
+                blockIndex = value;
+            }
         }
     }
 }

@@ -25,6 +25,7 @@ namespace FreePIE.Core.Plugins.VJoy
         {
             if (!FfbEnabled) throw new NotSupportedException("This VJoy device does not have FFB enabled");
 
+            VJoyFfbWrap.Init();
             VJoyFfbWrap.RegisterDevice((int)Index, dev);
         }
 
@@ -93,6 +94,11 @@ namespace FreePIE.Core.Plugins.VJoy
             Joystick.ResetVJD(index);
         }
 
+        public void PrintDeviceInfo(Device device)
+        {
+            device.printSupportedEffects();
+        }
+
         public void SetButton(int button, bool pressed)
         {
             if (button >= maxButtons)
@@ -155,6 +161,7 @@ namespace FreePIE.Core.Plugins.VJoy
         public void Dispose()
         {
             Joystick.RelinquishVJD(Index);
+            VJoyFfbWrap.Dispose();
         }
     }
 }

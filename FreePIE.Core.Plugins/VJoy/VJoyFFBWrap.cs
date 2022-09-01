@@ -11,20 +11,16 @@ namespace FreePIE.Core.Plugins.VJoy
     public static class VJoyFfbWrap
     {
 
-        private delegate void FfbPacketAvailable(IntPtr returnedData, IntPtr userData);
-        private static FfbPacketAvailable wrapper;
         private static bool isRegistered;
-        private static FFBPType lastPacketType;
-        private static FFBEType lastEffectType;
         private static FfbPacket ffbPacket;
-        private static readonly PacketMapper packetMapper = new PacketMapper();
+        private static FfbPacketAvailable wrapper;
+        private delegate void FfbPacketAvailable(IntPtr returnedData, IntPtr userData);
+        private static PacketMapper packetMapper;
         private static readonly HashSet<Device>[] registeredDevices = new HashSet<Device>[16];
-        private static readonly ConcurrentQueue<IAction<IList<ICollection<Device>>>> queue = new ConcurrentQueue<IAction<IList<ICollection<Device>>>>();
-        private static readonly BlockingCollection<IAction<IList<ICollection<Device>>>> queueWrapper;
 
-        static VJoyFfbWrap()
+        public static void Init()
         {
-            queueWrapper = new BlockingCollection<IAction<IList<ICollection<Device>>>>(queue);
+            packetMapper = new PacketMapper();
         }
 
         /// <summary>
@@ -51,8 +47,6 @@ namespace FreePIE.Core.Plugins.VJoy
         {
             if (!isRegistered)
             {
-                //Console.SetOut(System.IO.TextWriter.Null);
-                //Console.SetError(System.IO.TextWriter.Null);
                 wrapper = OnFfbPacketAvailable; //needed to keep a reference!
                 _FfbRegisterGenCB(wrapper, IntPtr.Zero);
                 isRegistered = true;

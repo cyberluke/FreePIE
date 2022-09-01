@@ -26,7 +26,8 @@ namespace FreePIE.Core.Plugins.VJoy
             var pa = this[packet.PacketType];
             if (pa != null)
             {
-                IPacketAction action = pa.Convert(packet);
+
+                IPacketAction action = pa.FromPacket(packet);
                 if (action != null)
                 {
                     Enqueue(action);

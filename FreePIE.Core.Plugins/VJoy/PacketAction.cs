@@ -14,7 +14,7 @@ namespace FreePIE.Core.Plugins.VJoy
     public abstract class PacketAction
     {
 
-        public abstract IPacketAction Convert(FfbPacket packet);
+        public abstract IPacketAction FromPacket(FfbPacket packet);
     }
 
     /// <summary>
@@ -30,9 +30,8 @@ namespace FreePIE.Core.Plugins.VJoy
             action = act;
         }
 
-        public override IPacketAction Convert(FfbPacket packet)
+        public override IPacketAction FromPacket(FfbPacket packet)
         {
-            //currently converting it anyway, so the packet is still logged to console. If there's no action, return null so nothing'll be enqueued.
             var p = new AsyncPacketData<T>(action, packet);
             if (action == null)
                 return null;
@@ -50,20 +49,23 @@ namespace FreePIE.Core.Plugins.VJoy
 
         public AsyncPacketData(Action<Device, T> a, FfbPacket p) : base(a)
         {
+#if DEBUG
             timestamp = DateTime.Now;
+#endif
             packet = p;
         }
 
         private void Call()
         {
-            //packet.Init();
             convertedPacket = (T)packet.GetPacketData(packet.PacketType);
             // If it breaks here it means incorrect conversion between PacketMapper definition
             // and FfbPacket.GetPacketData() method
-            Console.WriteLine(convertedPacket.ToString());
             VJoyFfbWrap.ExecuteOnRegisteredDevices(this);
+#if DEBUG
+            Console.WriteLine(convertedPacket.ToString());
             Console.WriteLine("Receive->process delay: {0:N3}ms", (DateTime.Now - this.timestamp).TotalMilliseconds);
             Console.WriteLine("Forwarding {0} to all joystick(s) registered for vJoy device {1}", this.packet.PacketType, this.packet.DeviceId);
+#endif
         }
 
         public void Call(InternalFfbPacket inMemoryPacket)
@@ -72,28 +74,5 @@ namespace FreePIE.Core.Plugins.VJoy
             Call();
         }
 
-        /*public void Call(IList<ICollection<Device>> registeredDevices)
-        {
-            //DEBUG: print useful information
-            Console.WriteLine("----------------------");
-            Console.WriteLine(packet);
-            Console.WriteLine(convertedPacket);
-            Console.WriteLine("Receive->process delay: {0:N3}ms", (DateTime.Now - timestamp).TotalMilliseconds);
-            if (action != null)
-            {
-                var rdevs = registeredDevices[packet.DeviceId - 1];
-                Console.WriteLine("Forwarding to {0} device{1}", rdevs.Count, rdevs.Count > 1 ? "s" : "");
-                try
-                {
-                    foreach (var dev in rdevs)
-                        action(dev, convertedPacket);
-                } catch (Exception e)
-                {
-                    Console.WriteLine("Exception when trying to forward:{0}\t{1}{0}\t{2}", Environment.NewLine, e.Message, e.StackTrace);
-                    //throw;
-                }
-            } else
-                Console.WriteLine("No forwarding action defined");
-        }*/
     }
 }

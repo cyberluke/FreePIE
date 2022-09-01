@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using FreePIE.Core.Plugins.Strategies;
-using FreePIE.Core.Plugins.VJoy;
 using SlimDX.DirectInput;
 using System.Linq;
 using FreePIE.Core.Plugins.VJoy.PacketData;
 using System.Threading;
 using System.Globalization;
-using System.Runtime.InteropServices;
+using System.Text;
 
 namespace FreePIE.Core.Plugins.Dx
 {
@@ -40,6 +39,7 @@ namespace FreePIE.Core.Plugins.Dx
             SupportsFfb = joystick.Capabilities.Flags.HasFlag(DeviceFlags.ForceFeedback);
             if (SupportsFfb)
                 PrepareFfb();
+
         }
 
         public JoystickState State
@@ -105,6 +105,21 @@ namespace FreePIE.Core.Plugins.Dx
                     Console.WriteLine("ObjectType: " + deviceObject.ObjectType);
                 }
             Axes = ax.ToArray();
+        }
+
+        public void printSupportedEffects()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendFormat(" >> Device: {0}", Name);
+            foreach (EffectInfo effect in joystick.GetEffects()) {
+                sb.AppendFormat(" >> Effect Name: {0}\n", effect.Name);
+                sb.AppendFormat(" >> Effect Type: {0}\n", effect.Type);
+                sb.AppendFormat(" >> Effect Guid: {0}\n", effect.Guid);
+                sb.AppendFormat(" >> Static Parameters: {0}\n", effect.StaticParameters.ToString("g"));
+                sb.AppendFormat(" >> Dynamic Parameters: {0}\n", effect.DynamicParameters.ToString("g"));
+            }
+
+            Console.WriteLine(sb.ToString());
         }
 
         public void SetEnvelope(int blockIndex, int attackLevel, int attackTime, int fadeLevel, int fadeTime)
@@ -196,8 +211,6 @@ namespace FreePIE.Core.Plugins.Dx
             //Also, from my testing, when new Effect is called no packets were sent, all above 3 were sent all at once when SetParamters was called (or, when new Effect was called with EffectParameters, obviously). Meaning that there's no real advantage to calling new Effect early.
 
             //angle is in 100th degrees, so if you want to express 90 degrees (vector pointing to the right) you'll have to enter 9000
-            Console.WriteLine("Name: {0}", Name);
-            Console.WriteLine("InstanceGuid: {0}", InstanceGuid);
             var directions = er.Effect.Polar ? new int[] { er.Effect.Direction * 36000 / 255, 0 } : new int[] { er.Effect.DirX, er.Effect.DirY };
             //CreateEffect(er.BlockIndex, er.EffectType, er.Polar, directions, er.Duration, er.NormalizedGain, er.SamplePeriod, 0, er.TriggerBtn, er.TriggerRepeatInterval);
             CreateEffect(er.BlockIndex, er.Effect.EffectType, er.Effect.Polar, directions, er.Effect.Duration*1000, er.NormalizedGain, er.Effect.SamplePrd * 1000, er.Effect.StartDelay * 1000);
@@ -255,11 +268,7 @@ namespace FreePIE.Core.Plugins.Dx
         /// <param name="type">The <see cref="EffectType"/> to create an effect for</param>
         public void CreateEffect(int blockIndex, FFBEType type)
         {
-            Console.WriteLine("!!! Creating effect: {0}", type);
-
             var eGuid = GetEffectGuid(type);
-            Console.WriteLine("eGuid {0}", eGuid);
-
 
             if (Effects[blockIndex] != null && !Effects[blockIndex].Disposed)
             {
@@ -271,7 +280,9 @@ namespace FreePIE.Core.Plugins.Dx
 
                 if (effectParams[blockIndex].Parameters == null)
                 {
+#if DEBUG                
                     Console.WriteLine("!!! WARNING: Effect Parameters are empty!");
+#endif
                     effectParams[blockIndex].Parameters = GetTypeSpecificParameter(type);
                     if (type.Equals(FFBEType.ET_RAMP))
                     {
@@ -304,15 +315,15 @@ namespace FreePIE.Core.Plugins.Dx
 
             if (Effects[blockIndex] == null)
             {
+#if DEBUG
                 Console.WriteLine("No effect has been created in block " + blockIndex);
+#endif
                 return;
             }
 
             switch (effectOperation)
             {
                 case FFBOP.EFF_START:
-                    //Console.WriteLine("Name: {0}", Name);
-                    //Console.WriteLine("InstanceGuid: {0}", InstanceGuid);                   
                     Effects[blockIndex].Start(loopCount);
                     break;
                 case FFBOP.EFF_SOLO:
@@ -347,9 +358,7 @@ namespace FreePIE.Core.Plugins.Dx
         public void Dispose()
         {
             DisposeEffects();
-            //Console.WriteLine("Disposing joystick: " + Name);
             joystick.Dispose();
-            //Console.WriteLine("Finished disposing joystick");
         }
 
         private void DisposeEffects()
