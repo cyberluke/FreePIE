@@ -23,6 +23,22 @@ namespace FreePIE.Core.Plugins.VJoy
             return ((byte)InByte * 100) / 255;
         }
 
+        // Convert One-Byte 2's complement input to integer
+        public static int TwosCompInt2Int(short input)
+        {
+            int tmp;
+            short inv = (short)(~input + 1);
+            bool isNeg = (bool)(input >> 15 == 0 ? false : true);
+            if (isNeg)
+            {
+                tmp = (int)(inv);
+                tmp = -1 * tmp;
+                return tmp;
+            }
+            else
+                return (int)input;
+        }
+
         // Convert Effect type to String
         public static bool EffectType2Str(FFBEType Type, out string Str)
         {

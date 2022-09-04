@@ -7,6 +7,7 @@ using FreePIE.Core.Plugins.VJoy.PacketData;
 using System.Threading;
 using System.Globalization;
 using System.Text;
+using FreePIE.Core.Plugins.VJoy;
 
 namespace FreePIE.Core.Plugins.Dx
 {
@@ -171,7 +172,7 @@ namespace FreePIE.Core.Plugins.Dx
 
         public void SetPeriodicForce(int blockIndex, int magnitude, int offset, int period, int phase)
         {
-            CheckFfbSupport("Unable to set constant force");
+            CheckFfbSupport("Unable to set periodic force");
 
             effectParams[blockIndex].Parameters = new PeriodicForce();
             effectParams[blockIndex].Parameters.AsPeriodicForce().Magnitude = magnitude;
@@ -211,7 +212,8 @@ namespace FreePIE.Core.Plugins.Dx
             //Also, from my testing, when new Effect is called no packets were sent, all above 3 were sent all at once when SetParamters was called (or, when new Effect was called with EffectParameters, obviously). Meaning that there's no real advantage to calling new Effect early.
 
             //angle is in 100th degrees, so if you want to express 90 degrees (vector pointing to the right) you'll have to enter 9000
-            var directions = er.Effect.Polar ? new int[] { er.Effect.Direction * 36000 / 255, 0 } : new int[] { er.Effect.DirX, er.Effect.DirY };
+            var directions = er.Effect.Polar ? new int[] { (VJoyUtils.Polar2Deg(er.Effect.Direction)) * 100, 0 } : new int[] { er.Effect.DirX, er.Effect.DirY };
+            Console.WriteLine("Calculated polar direction raw {0} and api {1}", er.Effect.Direction, directions[0]);
             //CreateEffect(er.BlockIndex, er.EffectType, er.Polar, directions, er.Duration, er.NormalizedGain, er.SamplePeriod, 0, er.TriggerBtn, er.TriggerRepeatInterval);
             CreateEffect(er.BlockIndex, er.Effect.EffectType, er.Effect.Polar, directions, er.Effect.Duration*1000, er.NormalizedGain, er.Effect.SamplePrd * 1000, er.Effect.StartDelay * 1000);
         }
@@ -226,6 +228,19 @@ namespace FreePIE.Core.Plugins.Dx
         public void CreateEffect(int blockIndex, FFBEType effectType, bool polar, int[] dirs, int duration = -1, int gain = 10000, int samplePeriod = 0, int startDelay = 0, int triggerButton = -1, int triggerRepeatInterval = 0)
         {
             CheckFfbSupport("Unable to create effect");
+
+            // Convert polar to cartesian cöordinates.
+           /* if (polar)
+            {
+                double pa = (dirs[0]) * Math.PI / 36000d;
+                // Convert to actual polar coordinates:
+                // FFB polar coordinates have 0degrees pointing to the north, and go clockwise, whereas 'real', mathematic polar coordinates point to the east and go counterclockwise
+                pa = pa - Math.PI;
+                // For being a direction, scale of x and y should not matter as long as they are in the same proportions relative to eachother (couldn't find anything in the spec though....). Might need to increase the 1000 constant to get a more precise number though...
+                dirs[0] = (int)(Math.Sin(pa) * 100000); // x-axis
+                if (dirs.Length > 1)
+                    dirs[1] = Axes.Length > 1 ? (int)(Math.Cos(pa) * 100000) : 0; // y-axis, if it exists
+            }*/
 
             TypeSpecificParameters parametersDefault = effectParams[blockIndex].Parameters;
 
@@ -272,6 +287,7 @@ namespace FreePIE.Core.Plugins.Dx
 
             if (Effects[blockIndex] != null && !Effects[blockIndex].Disposed)
             {
+                //Effects[blockIndex].Stop();
                 Effects[blockIndex].Dispose();
             }
 
@@ -295,6 +311,8 @@ namespace FreePIE.Core.Plugins.Dx
                 {
                     Effects[blockIndex] = new Effect(joystick, eGuid, effectParams[blockIndex]);
                 }
+                //Effects[blockIndex].Download();
+
 
             }
             catch (Exception e)
