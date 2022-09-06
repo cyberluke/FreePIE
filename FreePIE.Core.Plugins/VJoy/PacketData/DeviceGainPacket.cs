@@ -28,11 +28,12 @@ namespace FreePIE.Core.Plugins.VJoy.PacketData
 
         public void fromPacket(IntPtr data, int cmd)
         {
-          
-            if ((uint)ERROR.ERROR_SUCCESS != VJoyUtils.Joystick.Ffb_dp_DevGain(data, ref Gain, cmd))
+            Gain = 0xFF;
+            /*if ((uint)ERROR.ERROR_SUCCESS != VJoyUtils.Joystick.Ffb_h_DevGain(data, ref Gain))
             {
                 throw new Exception("Could not parse incoming packet as Effect Operation Report from VJoy.");
             }
+            Console.WriteLine(ToString());*/
         }
     }
 }

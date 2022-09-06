@@ -105,6 +105,7 @@ namespace FreePIE.Core.Plugins.Dx
                     ax.Add((int)deviceObject.ObjectType);
                     Console.WriteLine("ObjectType: " + deviceObject.ObjectType);
                 }
+            //ax.Reverse(); // G940 fix vs VJoy default
             Axes = ax.ToArray();
         }
 
@@ -152,9 +153,12 @@ namespace FreePIE.Core.Plugins.Dx
         {
             CheckFfbSupport("Unable to set constant force");
 
-            int lastConditionId = 0;
-            effectParams[blockIndex].Parameters = new ConditionSet();
-            effectParams[blockIndex].Parameters.AsConditionSet().Conditions = new Condition[1];
+            int lastConditionId = isY ? 1 : 0;
+            if (isY == false)
+            {
+                effectParams[blockIndex].Parameters = new ConditionSet();
+                effectParams[blockIndex].Parameters.AsConditionSet().Conditions = new Condition[2];
+            }
 
             effectParams[blockIndex].Parameters.AsConditionSet().Conditions[lastConditionId].Offset = centerPointOffset;
             effectParams[blockIndex].Parameters.AsConditionSet().Conditions[lastConditionId].DeadBand = deadBand;
@@ -163,10 +167,11 @@ namespace FreePIE.Core.Plugins.Dx
             effectParams[blockIndex].Parameters.AsConditionSet().Conditions[lastConditionId].PositiveCoefficient = posCoeff;
             effectParams[blockIndex].Parameters.AsConditionSet().Conditions[lastConditionId].PositiveSaturation = posSatur;
 
-            if (Effects[blockIndex] != null && !Effects[blockIndex].Disposed)
+
+            /*if (Effects[blockIndex] != null && !Effects[blockIndex].Disposed)
             {
                 Effects[blockIndex].SetParameters(effectParams[blockIndex], EffectParameterFlags.TypeSpecificParameters);
-            }
+            }*/
         }
 
 
@@ -213,7 +218,7 @@ namespace FreePIE.Core.Plugins.Dx
 
             //angle is in 100th degrees, so if you want to express 90 degrees (vector pointing to the right) you'll have to enter 9000
             var directions = er.Effect.Polar ? new int[] { (VJoyUtils.Polar2Deg(er.Effect.Direction)) * 100, 0 } : new int[] { er.Effect.DirX, er.Effect.DirY };
-            Console.WriteLine("Calculated polar direction raw {0} and api {1}", er.Effect.Direction, directions[0]);
+            //Console.WriteLine("Calculated polar direction raw {0} and api {1}", er.Effect.Direction, directions[0]);
             //CreateEffect(er.BlockIndex, er.EffectType, er.Polar, directions, er.Duration, er.NormalizedGain, er.SamplePeriod, 0, er.TriggerBtn, er.TriggerRepeatInterval);
             CreateEffect(er.BlockIndex, er.Effect.EffectType, er.Effect.Polar, directions, er.Effect.Duration*1000, er.NormalizedGain, er.Effect.SamplePrd * 1000, er.Effect.StartDelay * 1000);
         }
@@ -249,27 +254,48 @@ namespace FreePIE.Core.Plugins.Dx
             envelope.AttackTime = 0;
             envelope.FadeLevel = 10000;
             envelope.FadeTime = 0;
+            bool setEnvelope = false;
             if (effectParams[blockIndex].Envelope.HasValue)
             {
+                setEnvelope = true;
                 envelope.AttackLevel = effectParams[blockIndex].Envelope.Value.AttackLevel;
                 envelope.AttackTime = effectParams[blockIndex].Envelope.Value.AttackTime;
                 envelope.FadeLevel = effectParams[blockIndex].Envelope.Value.FadeLevel;
                 envelope.FadeTime = effectParams[blockIndex].Envelope.Value.FadeTime;
             }
 
-            effectParams[blockIndex] = new EffectParameters()
+            if (setEnvelope)
             {
-                Duration = duration,
-                Flags = EffectFlags.ObjectIds | (polar ? EffectFlags.Polar : EffectFlags.Cartesian),
-                Gain = gain,
-                SamplePeriod = samplePeriod,
-                StartDelay = startDelay,
-                TriggerButton = triggerButton,
-                TriggerRepeatInterval = triggerRepeatInterval,
-                Envelope = envelope
-            };
+                // TODO: DO NOT CREATE INSTANCE IF ONLY CHANGING PARAMETERS FOR EXISTING EFFECT
+                effectParams[blockIndex] = new EffectParameters()
+                {
+                    Duration = duration,
+                    Flags = EffectFlags.ObjectIds | (polar ? EffectFlags.Polar : EffectFlags.Cartesian),
+                    Gain = gain,
+                    SamplePeriod = samplePeriod,
+                    StartDelay = startDelay,
+                    TriggerButton = triggerButton,
+                    //TriggerRepeatInterval = triggerRepeatInterval,
+                    Envelope = envelope
+                };
+            }
+            else
+            {
+                // TODO: DO NOT CREATE INSTANCE IF ONLY CHANGING PARAMETERS FOR EXISTING EFFECT
+                effectParams[blockIndex] = new EffectParameters()
+                {
+                    Duration = duration,
+                    Flags = EffectFlags.ObjectIds | (polar ? EffectFlags.Polar : EffectFlags.Cartesian),
+                    Gain = gain,
+                    SamplePeriod = samplePeriod,
+                    StartDelay = startDelay,
+                    TriggerButton = triggerButton,
+                    //TriggerRepeatInterval = triggerRepeatInterval,
+                    Envelope = null
+                };
+            }
             effectParams[blockIndex].Parameters = parametersDefault;
-            effectParams[blockIndex].SetAxes(Axes, dirs);
+            effectParams[blockIndex].SetAxes(Axes, dirs); // potential bug AxesEnabledDirection from VJoy=4, real device=3
 
             CreateEffect(blockIndex, effectType);
         }
@@ -287,8 +313,19 @@ namespace FreePIE.Core.Plugins.Dx
 
             if (Effects[blockIndex] != null && !Effects[blockIndex].Disposed)
             {
-                //Effects[blockIndex].Stop();
-                Effects[blockIndex].Dispose();
+                if (Effects[blockIndex].Guid.Equals(eGuid) && effectParams[blockIndex].Parameters != null)
+                {
+                    Console.WriteLine("param change only - try to change only new params");
+                    Effects[blockIndex].Dispose();
+                    //Effects[blockIndex].SetParameters(effectParams[blockIndex], EffectParameterFlags.All);
+                    Effects[blockIndex] = new Effect(joystick, eGuid, effectParams[blockIndex]);
+                    Effects[blockIndex].Start();
+                    return;
+                }
+                else
+                {
+                    Effects[blockIndex].Dispose();
+                }
             }
 
             try
@@ -311,7 +348,6 @@ namespace FreePIE.Core.Plugins.Dx
                 {
                     Effects[blockIndex] = new Effect(joystick, eGuid, effectParams[blockIndex]);
                 }
-                //Effects[blockIndex].Download();
 
 
             }

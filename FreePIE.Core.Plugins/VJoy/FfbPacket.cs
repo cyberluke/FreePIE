@@ -31,6 +31,7 @@ namespace FreePIE.Core.Plugins.VJoy
         public FfbPacket(IntPtr packetPtr)
         {
             ClonePacket(packetPtr);
+            Console.WriteLine("Type: {0}, Data: {1}", packetType.ToString(), new String(VJoyUtils.bytesToHex(newData)));
         }
 
         public void ClonePacket(IntPtr data)
