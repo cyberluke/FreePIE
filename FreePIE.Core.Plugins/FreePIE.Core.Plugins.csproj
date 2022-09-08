@@ -82,6 +82,7 @@
     <Compile Include="AndroidPlugin.cs" />
     <Compile Include="ApplePlugin.cs" />
     <Compile Include="ComDevicePlugin.cs" />
+    <Compile Include="Dx\EffectFlagsUtil.cs" />
     <Compile Include="FreePieIOPlugin.cs" />
     <Compile Include="Globals\GlobalIndexer.cs" />
     <Compile Include="HydraPlugin.cs" />

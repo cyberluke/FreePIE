@@ -138,24 +138,5 @@ namespace FreePIE.Core.Plugins
 
         public bool supportsFfb { get { return device.SupportsFfb; } }
 
-        public void setConstantForce(int blockIndex, int magnitude)
-        {
-            device.SetConstantForce(blockIndex, magnitude);
-        }
-
-        public void createConstantForceEffect(int blockIndex, bool polar, IEnumerable<int> dirs, int duration = -1, int gain = 10000, int samplePeriod = 0, int startDelay = 0, int triggerButton = -1, int triggerRepeatInterval = 0)
-        {
-            device.CreateEffect(blockIndex, FFBEType.ET_CONST, polar, dirs.ToArray(), duration, gain, samplePeriod, startDelay, triggerButton, triggerRepeatInterval);
-        }
-
-        public void startEffect(int blockIndex, int loopCount = 0)
-        {
-            device.OperateEffect(blockIndex, FFBOP.EFF_START, loopCount);
-        }
-
-        public void createTestEffect()
-        {
-            device.CreateTestEffect();
-        }
     }
 }

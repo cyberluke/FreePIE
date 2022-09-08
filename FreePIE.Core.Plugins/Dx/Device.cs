@@ -15,13 +15,15 @@ namespace FreePIE.Core.Plugins.Dx
     {
         private const int BlockSize = 8;
         private Effect[] Effects = new Effect[BlockSize];
-        private readonly EffectParameters[] effectParams = new EffectParameters[BlockSize];
+        private EffectParameters[] effectParams = new EffectParameters[BlockSize];
+        private EffectParameterFlags[] effectFlags = new EffectParameterFlags[BlockSize];
+        private int[] effectLastDir = new int[BlockSize];
         private int[] Axes;
 
         public string Name { get { return joystick.Properties.ProductName; } }
         public Guid InstanceGuid { get { return joystick.Information.InstanceGuid; } }
         public bool SupportsFfb { get; }
-
+        private ConditionSet conditionSet;
 
         public Joystick joystick { get; }
         private JoystickState state;
@@ -34,14 +36,20 @@ namespace FreePIE.Core.Plugins.Dx
             Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
 
             this.joystick = joystick;
-            SetRange(-1000, 1000);
+            SetRange(-10000, 10000);
             getPressedStrategy = new GetPressedStrategy<int>(GetDown);
 
             SupportsFfb = joystick.Capabilities.Flags.HasFlag(DeviceFlags.ForceFeedback);
             if (SupportsFfb)
                 PrepareFfb();
 
+            // Setup and reuse parameters for ConditionReportPacket
+            // the real hardware might have X a Y axis switched
+            conditionSet = new ConditionSet();
+            conditionSet.AsConditionSet().Conditions = new Condition[2];
         }
+
+        #region Properties (getters, setters)
 
         public JoystickState State
         {
@@ -90,40 +98,161 @@ namespace FreePIE.Core.Plugins.Dx
             }
         }
 
-        private void CheckFfbSupport(string message)
+        #endregion
+
+        protected Envelope? getEnvelope(EffectReportPacket er)
         {
-            if (!SupportsFfb)
-                throw new NotSupportedException(message + " - this device does not support FFB.");
+            if (effectParams[er.BlockIndex].Envelope.HasValue)
+            {
+                Envelope envelope = new Envelope();
+                envelope.AttackLevel = effectParams[er.BlockIndex].Envelope.Value.AttackLevel;
+                envelope.AttackTime = effectParams[er.BlockIndex].Envelope.Value.AttackTime;
+                envelope.FadeLevel = effectParams[er.BlockIndex].Envelope.Value.FadeLevel;
+                envelope.FadeTime = effectParams[er.BlockIndex].Envelope.Value.FadeTime;
+                return envelope;
+            }
+            else
+            {
+                return null;
+            }
         }
 
-        private void PrepareFfb()
+        public void SetEffectParams(EffectReportPacket er)
         {
-            List<int> ax = new List<int>();
-            foreach (DeviceObjectInstance deviceObject in joystick.GetObjects())
-                if ((deviceObject.ObjectType & ObjectDeviceType.ForceFeedbackActuator) != 0)
-                {
-                    ax.Add((int)deviceObject.ObjectType);
-                    Console.WriteLine("ObjectType: " + deviceObject.ObjectType);
-                }
-            //ax.Reverse(); // G940 fix vs VJoy default
-            Axes = ax.ToArray();
-        }
+            CheckFfbSupport("Unable to create effect");
 
-        public void printSupportedEffects()
-        {
-            StringBuilder sb = new StringBuilder();
-            sb.AppendFormat(" >> Device: {0}", Name);
-            foreach (EffectInfo effect in joystick.GetEffects()) {
-                sb.AppendFormat(" >> Effect Name: {0}\n", effect.Name);
-                sb.AppendFormat(" >> Effect Type: {0}\n", effect.Type);
-                sb.AppendFormat(" >> Effect Guid: {0}\n", effect.Guid);
-                sb.AppendFormat(" >> Static Parameters: {0}\n", effect.StaticParameters.ToString("g"));
-                sb.AppendFormat(" >> Dynamic Parameters: {0}\n", effect.DynamicParameters.ToString("g"));
+            //angle is in 100th degrees, so if you want to express 90 degrees (vector pointing to the right) you'll have to enter 9000
+            var directions = er.Effect.Polar ? new int[] { (VJoyUtils.Polar2Deg(er.Effect.Direction)) * 100, 0 } : new int[] { er.Effect.DirX, er.Effect.DirY };
+            var eGuid = GetEffectGuid(er.Effect.EffectType);
+            TypeSpecificParameters parametersDefault = effectParams[er.BlockIndex].Parameters;
+
+            if (!isExistingEffect(er, eGuid))
+            {
+                effectParams[er.BlockIndex] = new EffectParameters();
             }
 
-            Console.WriteLine(sb.ToString());
+            if (effectParams[er.BlockIndex].Duration != er.Effect.Duration * 1000) {
+                EffectFlagsUtil.AddTo(EffectParameterFlags.Duration, ref effectFlags[er.BlockIndex]);
+                effectParams[er.BlockIndex].Duration = er.Effect.Duration * 1000;
+            }
+            //if (er.Effect.Duration == 65535)
+            //{
+            //    EffectFlagsUtil.AddTo(EffectParameterFlags.Start, ref effectFlags[er.BlockIndex]);
+            //}
+
+            effectParams[er.BlockIndex].Flags = EffectFlags.ObjectIds | (er.Effect.Polar ? EffectFlags.Polar : EffectFlags.Cartesian);
+
+            if (effectParams[er.BlockIndex].Gain != er.NormalizedGain)
+            {
+                EffectFlagsUtil.AddTo(EffectParameterFlags.Gain, ref effectFlags[er.BlockIndex]);
+                effectParams[er.BlockIndex].Gain = er.NormalizedGain;
+            }
+
+            if (effectParams[er.BlockIndex].SamplePeriod != er.Effect.SamplePrd * 1000)
+            {
+                EffectFlagsUtil.AddTo(EffectParameterFlags.SamplePeriod, ref effectFlags[er.BlockIndex]);
+                effectParams[er.BlockIndex].SamplePeriod = er.Effect.SamplePrd * 1000;
+            }
+            if (effectParams[er.BlockIndex].StartDelay != er.Effect.StartDelay * 1000)
+            {
+                EffectFlagsUtil.AddTo(EffectParameterFlags.StartDelay, ref effectFlags[er.BlockIndex]);
+                effectParams[er.BlockIndex].StartDelay = er.Effect.StartDelay * 1000;
+            }
+
+            //effectParams[er.BlockIndex].TriggerButton = er.Effect.TrigerBtn;
+            //effectParams[er.BlockIndex].TriggerRepeatInterval = er.Effect.TrigerRpt;
+            effectParams[er.BlockIndex].Envelope = getEnvelope(er);
+
+            effectParams[er.BlockIndex].Parameters = parametersDefault;
+            effectParams[er.BlockIndex].SetAxes(Axes, directions);
+            if (effectLastDir[er.BlockIndex] != directions[0])
+            {
+                effectLastDir[er.BlockIndex] = directions[0];
+                EffectFlagsUtil.AddTo(EffectParameterFlags.Direction, ref effectFlags[er.BlockIndex]);
+            }
+
+            if (effectParams[er.BlockIndex].TriggerButton != -1)
+            {
+                EffectFlagsUtil.AddTo(EffectParameterFlags.TriggerButton, ref effectFlags[er.BlockIndex]);
+                effectParams[er.BlockIndex].TriggerButton = -1;
+            }
+
+
+            Console.WriteLine("  >> Effect Flags: {0}", VJoyUtils.FlagsEnumToString<EffectParameterFlags>(effectFlags[er.BlockIndex]));
+
+            if (isExistingEffect(er, eGuid) && effectParams[er.BlockIndex].Parameters != null)
+            {
+                Console.WriteLine("param change only - try to change only new params");
+                SlimDX.Result result = Effects[er.BlockIndex].SetParameters(effectParams[er.BlockIndex], effectFlags[er.BlockIndex]);
+                if (result.IsSuccess)
+                {
+                    // clean this flag for incremental changes in next packets for same effect guid
+                    effectFlags[er.BlockIndex] = EffectParameterFlags.None;
+
+                    return;
+                }
+                else
+                {
+                    Console.WriteLine("failed setting params only => recreating whole effect block");
+                }
+            }
+
+            try
+            {
+                if (Effects[er.BlockIndex] != null && !Effects[er.BlockIndex].Disposed)
+                {
+                    Effects[er.BlockIndex].Dispose();
+                }
+
+                if (effectParams[er.BlockIndex].Parameters == null)
+                {
+#if DEBUG
+                    Console.WriteLine("!!! ERROR: Effect Parameters are empty! (missing packet?)");
+#endif
+                    effectParams[er.BlockIndex].Parameters = GetTypeSpecificParameter(er.Effect.EffectType);
+                    if (er.Effect.EffectType.Equals(FFBEType.ET_RAMP))
+                    {
+                        // set default ramp force if app did not send (compat fix)
+                        setRamp(er.BlockIndex, 10000, -10000);
+                    }
+                    Effects[er.BlockIndex] = new Effect(joystick, eGuid, effectParams[er.BlockIndex]);
+                }
+                else
+                {
+                    Effects[er.BlockIndex] = new Effect(joystick, eGuid, effectParams[er.BlockIndex]);
+                }
+
+                // clean this flag for incremental changes in next packets for same effect guid
+                effectFlags[er.BlockIndex] = EffectParameterFlags.None;
+
+            }
+            catch (Exception e)
+            {
+                throw new Exception("Unable to create new effect: " + e.Message, e);
+            }
         }
 
+        public void CreateEffect(int blockIndex, FFBEType type)
+        {
+            var eGuid = GetEffectGuid(type);
+            Effects[blockIndex] = new Effect(joystick, eGuid);
+            effectParams[blockIndex] = new EffectParameters();
+            effectFlags[blockIndex] = EffectParameterFlags.All;
+        }
+
+        protected bool isExistingEffect(EffectReportPacket er, Guid eGuid)
+        {
+            if (Effects[er.BlockIndex] != null && !Effects[er.BlockIndex].Disposed)
+            {
+                if (Effects[er.BlockIndex].Guid.Equals(eGuid))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        #region Effect Parameters (individual packets)
         public void SetEnvelope(int blockIndex, int attackLevel, int attackTime, int fadeLevel, int fadeTime)
         {
             Envelope envelope = new Envelope();
@@ -132,7 +261,10 @@ namespace FreePIE.Core.Plugins.Dx
             envelope.FadeLevel = fadeLevel;
             envelope.FadeTime = fadeTime;
             effectParams[blockIndex].Envelope = envelope;
+
+            EffectFlagsUtil.AddTo(EffectParameterFlags.Envelope, ref effectFlags[blockIndex]);
         }
+
 
         public void setRamp(int blockIndex, int start, int end)
         {
@@ -143,17 +275,14 @@ namespace FreePIE.Core.Plugins.Dx
             effectParams[blockIndex].Parameters.AsRampForce().Start = start;
             effectParams[blockIndex].Parameters.AsRampForce().End = end;
 
-            if (Effects[blockIndex] != null && !Effects[blockIndex].Disposed)
-            {
-                Effects[blockIndex].SetParameters(effectParams[blockIndex], EffectParameterFlags.TypeSpecificParameters);
-            }
+            EffectFlagsUtil.AddTo(EffectParameterFlags.TypeSpecificParameters, ref effectFlags[blockIndex]);
         }
 
         public void setConditionReport(int blockIndex, int centerPointOffset, int deadBand, bool isY, int negCoeff, int negSatur, int posCoeff, int posSatur)
         {
             CheckFfbSupport("Unable to set constant force");
 
-            int lastConditionId = isY ? 1 : 0;
+            int lastConditionId = isY ? 0 : 1; //G940 is reversed here
             if (isY == false)
             {
                 effectParams[blockIndex].Parameters = new ConditionSet();
@@ -167,11 +296,8 @@ namespace FreePIE.Core.Plugins.Dx
             effectParams[blockIndex].Parameters.AsConditionSet().Conditions[lastConditionId].PositiveCoefficient = posCoeff;
             effectParams[blockIndex].Parameters.AsConditionSet().Conditions[lastConditionId].PositiveSaturation = posSatur;
 
-
-            /*if (Effects[blockIndex] != null && !Effects[blockIndex].Disposed)
-            {
-                Effects[blockIndex].SetParameters(effectParams[blockIndex], EffectParameterFlags.TypeSpecificParameters);
-            }*/
+            EffectFlagsUtil.AddTo(EffectParameterFlags.Start, ref effectFlags[blockIndex]);
+            EffectFlagsUtil.AddTo(EffectParameterFlags.TypeSpecificParameters, ref effectFlags[blockIndex]);
         }
 
 
@@ -185,10 +311,7 @@ namespace FreePIE.Core.Plugins.Dx
             effectParams[blockIndex].Parameters.AsPeriodicForce().Period = period * 1000;
             effectParams[blockIndex].Parameters.AsPeriodicForce().Phase = phase;
 
-            if (Effects[blockIndex] != null && !Effects[blockIndex].Disposed)
-            {
-                Effects[blockIndex].SetParameters(effectParams[blockIndex], EffectParameterFlags.TypeSpecificParameters);
-            }
+            EffectFlagsUtil.AddTo(EffectParameterFlags.TypeSpecificParameters, ref effectFlags[blockIndex]);
         }
 
         public void SetConstantForce(int blockIndex, int magnitude)
@@ -198,164 +321,11 @@ namespace FreePIE.Core.Plugins.Dx
             effectParams[blockIndex].Parameters = GetTypeSpecificParameter(FFBEType.ET_CONST);
             effectParams[blockIndex].Parameters.AsConstantForce().Magnitude = magnitude;
 
-            if (Effects[blockIndex] != null && !Effects[blockIndex].Disposed)
-            {
-                Effects[blockIndex].SetParameters(effectParams[blockIndex], EffectParameterFlags.TypeSpecificParameters);
-            }
-
+            EffectFlagsUtil.AddTo(EffectParameterFlags.TypeSpecificParameters, ref effectFlags[blockIndex]);
         }
+        #endregion
 
-        public void SetEffectParams(EffectReportPacket er)
-        {
-            //This function is supposed to be a combination for multiple packets, because those packets are received in an unusual order (this is what I observed after testing with custom FFB code and games):
-            //- CreateNewEffect, which only contains an EffectType (so, techincally one could create the Effect already since only the type needs to be known, but has no idea in which block to put it)
-            //- Set<EffectType>, where the packet type already indicates which type it is. This packet can be used to place the effect in the correct block (since it includes a blockIdx), and we can construct the TypeSpecificParameters with this. Again, need to put those parameters "somewhere" until they can be put into the final EffectParameters
-            //- Effect (this method). All information needed to construct and start an Effect is included here.
-
-            //So - for simplicity's sake - I decided to just ignore the other two packets and start here. This means that this method is responsible for: creating an Effect; creating and filling EffectParameters; creating and setting TypeSpecificParameters on the EffectParameters; setting the EffectParameters on the Effect.
-
-            //Also, from my testing, when new Effect is called no packets were sent, all above 3 were sent all at once when SetParamters was called (or, when new Effect was called with EffectParameters, obviously). Meaning that there's no real advantage to calling new Effect early.
-
-            //angle is in 100th degrees, so if you want to express 90 degrees (vector pointing to the right) you'll have to enter 9000
-            var directions = er.Effect.Polar ? new int[] { (VJoyUtils.Polar2Deg(er.Effect.Direction)) * 100, 0 } : new int[] { er.Effect.DirX, er.Effect.DirY };
-            //Console.WriteLine("Calculated polar direction raw {0} and api {1}", er.Effect.Direction, directions[0]);
-            //CreateEffect(er.BlockIndex, er.EffectType, er.Polar, directions, er.Duration, er.NormalizedGain, er.SamplePeriod, 0, er.TriggerBtn, er.TriggerRepeatInterval);
-            CreateEffect(er.BlockIndex, er.Effect.EffectType, er.Effect.Polar, directions, er.Effect.Duration*1000, er.NormalizedGain, er.Effect.SamplePrd * 1000, er.Effect.StartDelay * 1000);
-        }
-
-        public void CreateTestEffect()
-        {
-            SetConstantForce(1, 5000);
-            CreateEffect(1, FFBEType.ET_CONST, false, new int[] { 1, 0 });
-            OperateEffect(1, FFBOP.EFF_START, 0);
-        }
-
-        public void CreateEffect(int blockIndex, FFBEType effectType, bool polar, int[] dirs, int duration = -1, int gain = 10000, int samplePeriod = 0, int startDelay = 0, int triggerButton = -1, int triggerRepeatInterval = 0)
-        {
-            CheckFfbSupport("Unable to create effect");
-
-            // Convert polar to cartesian cöordinates.
-           /* if (polar)
-            {
-                double pa = (dirs[0]) * Math.PI / 36000d;
-                // Convert to actual polar coordinates:
-                // FFB polar coordinates have 0degrees pointing to the north, and go clockwise, whereas 'real', mathematic polar coordinates point to the east and go counterclockwise
-                pa = pa - Math.PI;
-                // For being a direction, scale of x and y should not matter as long as they are in the same proportions relative to eachother (couldn't find anything in the spec though....). Might need to increase the 1000 constant to get a more precise number though...
-                dirs[0] = (int)(Math.Sin(pa) * 100000); // x-axis
-                if (dirs.Length > 1)
-                    dirs[1] = Axes.Length > 1 ? (int)(Math.Cos(pa) * 100000) : 0; // y-axis, if it exists
-            }*/
-
-            TypeSpecificParameters parametersDefault = effectParams[blockIndex].Parameters;
-
-            Envelope envelope = new Envelope();
-            envelope.AttackLevel = 10000;
-            envelope.AttackTime = 0;
-            envelope.FadeLevel = 10000;
-            envelope.FadeTime = 0;
-            bool setEnvelope = false;
-            if (effectParams[blockIndex].Envelope.HasValue)
-            {
-                setEnvelope = true;
-                envelope.AttackLevel = effectParams[blockIndex].Envelope.Value.AttackLevel;
-                envelope.AttackTime = effectParams[blockIndex].Envelope.Value.AttackTime;
-                envelope.FadeLevel = effectParams[blockIndex].Envelope.Value.FadeLevel;
-                envelope.FadeTime = effectParams[blockIndex].Envelope.Value.FadeTime;
-            }
-
-            if (setEnvelope)
-            {
-                // TODO: DO NOT CREATE INSTANCE IF ONLY CHANGING PARAMETERS FOR EXISTING EFFECT
-                effectParams[blockIndex] = new EffectParameters()
-                {
-                    Duration = duration,
-                    Flags = EffectFlags.ObjectIds | (polar ? EffectFlags.Polar : EffectFlags.Cartesian),
-                    Gain = gain,
-                    SamplePeriod = samplePeriod,
-                    StartDelay = startDelay,
-                    TriggerButton = triggerButton,
-                    //TriggerRepeatInterval = triggerRepeatInterval,
-                    Envelope = envelope
-                };
-            }
-            else
-            {
-                // TODO: DO NOT CREATE INSTANCE IF ONLY CHANGING PARAMETERS FOR EXISTING EFFECT
-                effectParams[blockIndex] = new EffectParameters()
-                {
-                    Duration = duration,
-                    Flags = EffectFlags.ObjectIds | (polar ? EffectFlags.Polar : EffectFlags.Cartesian),
-                    Gain = gain,
-                    SamplePeriod = samplePeriod,
-                    StartDelay = startDelay,
-                    TriggerButton = triggerButton,
-                    //TriggerRepeatInterval = triggerRepeatInterval,
-                    Envelope = null
-                };
-            }
-            effectParams[blockIndex].Parameters = parametersDefault;
-            effectParams[blockIndex].SetAxes(Axes, dirs); // potential bug AxesEnabledDirection from VJoy=4, real device=3
-
-            CreateEffect(blockIndex, effectType);
-        }
-
-        #region FFB helper functions
-
-        /// <summary>
-        /// Sets empty TypeSpecificParameters, and determines whether the current effect may need to be disposed
-        /// </summary>
-        /// <param name="blockIndex"></param>
-        /// <param name="type">The <see cref="EffectType"/> to create an effect for</param>
-        public void CreateEffect(int blockIndex, FFBEType type)
-        {
-            var eGuid = GetEffectGuid(type);
-
-            if (Effects[blockIndex] != null && !Effects[blockIndex].Disposed)
-            {
-                if (Effects[blockIndex].Guid.Equals(eGuid) && effectParams[blockIndex].Parameters != null)
-                {
-                    Console.WriteLine("param change only - try to change only new params");
-                    Effects[blockIndex].Dispose();
-                    //Effects[blockIndex].SetParameters(effectParams[blockIndex], EffectParameterFlags.All);
-                    Effects[blockIndex] = new Effect(joystick, eGuid, effectParams[blockIndex]);
-                    Effects[blockIndex].Start();
-                    return;
-                }
-                else
-                {
-                    Effects[blockIndex].Dispose();
-                }
-            }
-
-            try
-            {
-
-                if (effectParams[blockIndex].Parameters == null)
-                {
-#if DEBUG                
-                    Console.WriteLine("!!! WARNING: Effect Parameters are empty!");
-#endif
-                    effectParams[blockIndex].Parameters = GetTypeSpecificParameter(type);
-                    if (type.Equals(FFBEType.ET_RAMP))
-                    {
-                        // set default ramp force if app did not send (compat fix)
-                        setRamp(blockIndex, 10000, -10000);
-                    }
-                    Effects[blockIndex] = new Effect(joystick, eGuid, effectParams[blockIndex]);
-                }
-                else
-                {
-                    Effects[blockIndex] = new Effect(joystick, eGuid, effectParams[blockIndex]);
-                }
-
-
-            }
-            catch (Exception e)
-            {
-                throw new Exception("Unable to create new effect: " + e.Message, e);
-            }
-        }
+        #region Effect Operations (play, stop, download, unload)
 
         public void DownloadToDevice(int blockIndex)
         {
@@ -397,15 +367,6 @@ namespace FreePIE.Core.Plugins.Dx
                 e.Stop();
             }
         }
-
-        private Guid GetEffectGuid(FFBEType et)
-        {
-            Guid effectGuid = EffectTypeGuidMap(et);
-            if (!joystick.GetEffects().Any(effectInfo => effectInfo.Guid == effectGuid))
-                throw new Exception(string.Format("Joystick doesn't support {0}!", et));
-            return effectGuid;
-        }
-
         #endregion
 
         #region dispose functions
@@ -433,6 +394,14 @@ namespace FreePIE.Core.Plugins.Dx
         #endregion
 
         #region mapping functions
+
+        private Guid GetEffectGuid(FFBEType et)
+        {
+            Guid effectGuid = EffectTypeGuidMap(et);
+            if (!joystick.GetEffects().Any(effectInfo => effectInfo.Guid == effectGuid))
+                throw new Exception(string.Format("Joystick doesn't support {0}!", et));
+            return effectGuid;
+        }
 
         private static TypeSpecificParameters GetTypeSpecificParameter(FFBEType effectType)
         {
@@ -496,5 +465,40 @@ namespace FreePIE.Core.Plugins.Dx
             }
         }
         #endregion
+
+        private void CheckFfbSupport(string message)
+        {
+            if (!SupportsFfb)
+                throw new NotSupportedException(message + " - this device does not support FFB.");
+        }
+
+        private void PrepareFfb()
+        {
+            List<int> ax = new List<int>();
+            foreach (DeviceObjectInstance deviceObject in joystick.GetObjects())
+                if ((deviceObject.ObjectType & ObjectDeviceType.ForceFeedbackActuator) != 0)
+                {
+                    ax.Add((int)deviceObject.ObjectType);
+                    Console.WriteLine("ObjectType: " + deviceObject.ObjectType);
+                }
+            //ax.Reverse(); // G940 fix vs VJoy default
+            Axes = ax.ToArray();
+        }
+
+        public void printSupportedEffects()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendFormat(" >> Device: {0}", Name);
+            foreach (EffectInfo effect in joystick.GetEffects())
+            {
+                sb.AppendFormat(" >> Effect Name: {0}\n", effect.Name);
+                sb.AppendFormat(" >> Effect Type: {0}\n", effect.Type);
+                sb.AppendFormat(" >> Effect Guid: {0}\n", effect.Guid);
+                sb.AppendFormat(" >> Static Parameters: {0}\n", effect.StaticParameters.ToString("g"));
+                sb.AppendFormat(" >> Dynamic Parameters: {0}\n", effect.DynamicParameters.ToString("g"));
+            }
+
+            Console.WriteLine(sb.ToString());
+        }
     }
 }

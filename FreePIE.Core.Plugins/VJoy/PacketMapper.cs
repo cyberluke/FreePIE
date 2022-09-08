@@ -77,7 +77,7 @@ namespace FreePIE.Core.Plugins.VJoy
             // Feature Reports
 
             // Usage Create New Effect Report
-            this[FFBPType.PT_NEWEFREP] = null; // new PacketAction<CreateNewEffectPacket>((d, p) => d.CreateEffect(p.BlockIndex, p.Type));
+            this[FFBPType.PT_NEWEFREP] = new PacketAction<CreateNewEffectPacket>((d, p) => d.CreateEffect(p.BlockIndex, p.EffectType));
             // Usage Block Load Report
             this[FFBPType.PT_BLKLDREP] = new PacketAction<DeviceReportPacket>(null);
             // Usage PID Pool Report

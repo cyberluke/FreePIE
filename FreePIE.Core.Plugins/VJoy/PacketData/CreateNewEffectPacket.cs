@@ -1,26 +1,30 @@
 ﻿using System;
-using System.Runtime.InteropServices;
 
 namespace FreePIE.Core.Plugins.VJoy.PacketData
 {
-    [StructLayout(LayoutKind.Explicit)]
     public struct CreateNewEffectPacket : IFfbPacketData
     {
-        [FieldOffset(0)]
-        public byte IdxAndPacketType;
-        [FieldOffset(1)]
-        public byte BlockIndex;
-        [FieldOffset(2)]
-        public FFBEType Type;
+        public int DeviceId;
+        public FFBPType PacketType;
+        public FFBEType EffectType;
+        public int BlockIndex;
 
         public override string ToString()
         {
-            return string.Format("EffectType: {0}", Type);
+            return string.Format("EffectType: {0}", PacketType);
         }
 
         public void fromPacket(IntPtr data, int cmd)
         {
-            throw new NotImplementedException();
+            uint newEffectId = (uint)BlockIndex;
+            if ((uint)ERROR.ERROR_SUCCESS != VJoyUtils.Joystick.Ffb_dp_CreateNewEffect(data, ref EffectType, ref newEffectId, cmd))
+            {
+                throw new Exception("Could not parse incoming packet as Effect Operation Report from VJoy.");
+            }
+            if (newEffectId != (uint)BlockIndex)
+            {
+                throw new Exception("Possible issue with future effect block being rewritten here.");
+            }
         }
     }
 }

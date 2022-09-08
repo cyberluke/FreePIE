@@ -193,6 +193,13 @@ namespace FreePIE.Core.Plugins.VJoy
                     statePacket.PacketType = packetType;
                     statePacket.fromPacket(packetPtrCopy, cmd);
                     return statePacket;
+                case FFBPType.PT_NEWEFREP:
+                    CreateNewEffectPacket newEfPacket = new CreateNewEffectPacket();
+                    newEfPacket.BlockIndex = BlockIndex;
+                    newEfPacket.DeviceId = DeviceId;
+                    newEfPacket.PacketType = packetType;
+                    newEfPacket.fromPacket(packetPtrCopy, cmd);
+                    return newEfPacket;
                 default:
                     Console.WriteLine("Cannot get packet type, cannot create mapping for {0}", packetType.ToString());
                     return null;

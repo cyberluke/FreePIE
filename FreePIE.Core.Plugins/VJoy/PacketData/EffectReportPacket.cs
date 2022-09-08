@@ -58,6 +58,7 @@ namespace FreePIE.Core.Plugins.VJoy.PacketData
 
             string TypeStr;
             sb.Append("==============================\n");
+            sb.AppendFormat(" >> Effect Block: {0}\n", BlockIndex);
             if (!VJoyUtils.EffectType2Str(Effect.EffectType, out TypeStr))
                 sb.AppendFormat(" >> Effect Report: {0} {1}\n", (int)Effect.EffectType, Effect.EffectType.ToString());
             else
