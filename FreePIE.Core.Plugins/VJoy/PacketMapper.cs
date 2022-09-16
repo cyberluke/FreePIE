@@ -70,7 +70,7 @@ namespace FreePIE.Core.Plugins.VJoy
             this[FFBPType.PT_CTRLREP] = new PacketAction<PIDDeviceControlPacket>(null);
             // Usage Device Gain Report
             //this[FFBPType.PT_GAINREP] = new PacketAction<DeviceGainPacket>((d, p) => d.Gain = p.NormalizedGain);
-            this[FFBPType.PT_GAINREP] = new PacketAction<DeviceGainPacket>((d, p) => { d.Gain = p.NormalizedGain < 5000 ? 5000 : d.Gain = p.NormalizedGain; });
+            this[FFBPType.PT_GAINREP] = new PacketAction<DeviceGainPacket>((d, p) => { d.Gain = p.NormalizedGain < 10000 ? 10000 : d.Gain = p.NormalizedGain; });
             // Usage Set Custom Force Report
             this[FFBPType.PT_SETCREP] = new PacketAction<BasePacket>(null);
 

@@ -52,6 +52,7 @@ namespace FreePIE.Core.Plugins.VJoy
 #if DEBUG
             timestamp = DateTime.Now;
 #endif
+            timestamp = DateTime.Now;
             packet = p;
         }
 
@@ -65,6 +66,8 @@ namespace FreePIE.Core.Plugins.VJoy
             Console.WriteLine(convertedPacket.ToString());
             Console.WriteLine("Receive->process delay: {0:N3}ms", (DateTime.Now - this.timestamp).TotalMilliseconds);
             Console.WriteLine("Forwarding {0} to all joystick(s) registered for vJoy device {1}", this.packet.PacketType, this.packet.DeviceId);
+#else
+            Console.WriteLine("Receive->process delay: {0:N3}ms", (DateTime.Now - this.timestamp).TotalMilliseconds);
 #endif
         }
 

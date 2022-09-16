@@ -4,7 +4,6 @@ using System.Linq;
 using FreePIE.Core.Contracts;
 using FreePIE.Core.Plugins.Globals;
 using SlimDX.DirectInput;
-using FreePIE.Core.Plugins.VJoy;
 using JoystickState = SlimDX.DirectInput.JoystickState;
 using Device = FreePIE.Core.Plugins.Dx.Device;
 

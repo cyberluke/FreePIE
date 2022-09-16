@@ -43,10 +43,7 @@ namespace FreePIE.Core.Plugins.Dx
             if (SupportsFfb)
                 PrepareFfb();
 
-            // Setup and reuse parameters for ConditionReportPacket
-            // the real hardware might have X a Y axis switched
-            conditionSet = new ConditionSet();
-            conditionSet.AsConditionSet().Conditions = new Condition[2];
+            initializeConditionForce();
         }
 
         #region Properties (getters, setters)
@@ -115,6 +112,14 @@ namespace FreePIE.Core.Plugins.Dx
             {
                 return null;
             }
+        }
+
+        public void initializeConditionForce()
+        {
+            // Setup and reuse parameters for ConditionReportPacket
+            // the real hardware might have X a Y axis switched
+            conditionSet = new ConditionSet();
+            conditionSet.AsConditionSet().Conditions = new Condition[2];
         }
 
         public void SetEffectParams(EffectReportPacket er)
@@ -238,6 +243,10 @@ namespace FreePIE.Core.Plugins.Dx
             Effects[blockIndex] = new Effect(joystick, eGuid);
             effectParams[blockIndex] = new EffectParameters();
             effectFlags[blockIndex] = EffectParameterFlags.All;
+            if (type.Equals(FFBEType.ET_SPRNG))
+            {
+                initializeConditionForce();
+            }
         }
 
         protected bool isExistingEffect(EffectReportPacket er, Guid eGuid)
@@ -282,12 +291,11 @@ namespace FreePIE.Core.Plugins.Dx
         {
             CheckFfbSupport("Unable to set constant force");
 
-            int lastConditionId = isY ? 0 : 1; //G940 is reversed here
-            if (isY == false)
+            int lastConditionId = isY ? 1 : 0; //G940 is reversed here
+            /*if (isY == false)
             {
-                effectParams[blockIndex].Parameters = new ConditionSet();
-                effectParams[blockIndex].Parameters.AsConditionSet().Conditions = new Condition[2];
-            }
+                initializeConditionForce();
+            }*/
 
             effectParams[blockIndex].Parameters.AsConditionSet().Conditions[lastConditionId].Offset = centerPointOffset;
             effectParams[blockIndex].Parameters.AsConditionSet().Conditions[lastConditionId].DeadBand = deadBand;
