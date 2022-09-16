@@ -20,7 +20,7 @@ namespace FreePIE.GUI.Shells
             System.Diagnostics.Debug.Assert(MenuDropAlignmentField != null);
 
             EnsureStandardPopupAlignment();
-            SystemParameters.StaticPropertyChanged += (s, e) => EnsureStandardPopupAlignment();
+            //SystemParameters.StaticPropertyChanged += (s, e) => EnsureStandardPopupAlignment();
         }
 
         private static void EnsureStandardPopupAlignment()

@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>FreePIE.Core.Plugins</RootNamespace>
     <AssemblyName>FreePIE.Core.Plugins</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -103,7 +103,7 @@
     <Compile Include="MidiPlugin.cs" />
     <Compile Include="Midi\MidiStatus.cs" />
     <Compile Include="Midi\DataGlobal.cs" />
-    <Compile Include="TobiiEyeXPlugin.cs" />
+    <None Include="TobiiEyeXPlugin.cs" />
     <Compile Include="VJoy\BackgroundActionRunner.cs" />
     <Compile Include="VJoy\PacketAction.cs" />
     <Compile Include="VJoy\PacketData\DeviceReportPacket.cs" />
