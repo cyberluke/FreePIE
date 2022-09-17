@@ -8,6 +8,7 @@ using System.Threading;
 using System.Globalization;
 using System.Text;
 using FreePIE.Core.Plugins.VJoy;
+using static FreePIE.Core.Plugins.Logitech;
 
 namespace FreePIE.Core.Plugins.Dx
 {
@@ -36,6 +37,7 @@ namespace FreePIE.Core.Plugins.Dx
             Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
 
             this.joystick = joystick;
+
             SetRange(-10000, 10000);
             getPressedStrategy = new GetPressedStrategy<int>(GetDown);
 
@@ -291,11 +293,13 @@ namespace FreePIE.Core.Plugins.Dx
         {
             CheckFfbSupport("Unable to set constant force");
 
-            int lastConditionId = isY ? 1 : 0; //G940 is reversed here
-            /*if (isY == false)
+            int lastConditionId = isY ? 0 : 1;
+
+            if (isAxisReverse)
             {
-                initializeConditionForce();
-            }*/
+                //G940 is reversed here
+                lastConditionId = isY ? 1 : 0;
+            }
 
             effectParams[blockIndex].Parameters.AsConditionSet().Conditions[lastConditionId].Offset = centerPointOffset;
             effectParams[blockIndex].Parameters.AsConditionSet().Conditions[lastConditionId].DeadBand = deadBand;
@@ -438,6 +442,7 @@ namespace FreePIE.Core.Plugins.Dx
         }
 
         private static Dictionary<Guid, FFBEType> GuidToEffectType = Enum.GetValues(typeof(FFBEType)).Cast<FFBEType>().ToDictionary(EffectTypeGuidMap);
+        private bool isAxisReverse;
 
         private static Guid EffectTypeGuidMap(FFBEType et)
         {
@@ -489,14 +494,79 @@ namespace FreePIE.Core.Plugins.Dx
                     ax.Add((int)deviceObject.ObjectType);
                     Console.WriteLine("ObjectType: " + deviceObject.ObjectType);
                 }
-            //ax.Reverse(); // G940 fix vs VJoy default
+            if (ax.Capacity >= 2)
+            {
+                /**
+                 *  G940
+                     AxisEnabledDirection
+                     [0] = 16777474
+                     [1] = 16777218
+ 
+                     Vjoy
+                     [0] = 16777218
+                     [1] = 16777474
+                */
+                if (ax[0] == 16777474 && ax[1] == 16777218)
+                {
+                    Console.WriteLine("Reversed Axis detected. Enabling automatic XY axes reversed position in effect buffer queue");
+                    ax.Reverse();
+                    isAxisReverse = true;
+                }
+            }
             Axes = ax.ToArray();
+        }
+
+        public bool isG940Throttle()
+        {
+            return Name == "Logitech G940 Throttle";
+        }
+
+        public void setG940LED(int button, LogiColor color)
+        {
+            if (!isG940Throttle())
+            {
+                return;
+            }
+
+            unsafe
+            {
+                ButtonSetColor((IntPtr)joystick.InternalPointer, (LogiPanelButton)(button - 1), color);
+            }
+        }
+
+        public void setAllG940LED(LogiColor color)
+        {
+            if (!isG940Throttle())
+            {
+                return;
+            }
+
+            unsafe
+            {
+                SetAllButtonsColor((IntPtr)joystick.InternalPointer, color);
+            }
+        }
+
+        public bool isG940LED(int button, LogiColor color)
+        {
+            if (!isG940Throttle())
+            {
+                return false;
+            }
+
+            unsafe
+            {
+                return IsButtonColor((IntPtr)joystick.InternalPointer, (LogiPanelButton)(button - 1), color);
+            }
         }
 
         public void printSupportedEffects()
         {
             StringBuilder sb = new StringBuilder();
-            sb.AppendFormat(" >> Device: {0}", Name);
+            sb.AppendFormat(" >> Device: {0}\n", Name);
+            sb.AppendFormat(" >> Device GUID: {0}\n", InstanceGuid);
+            sb.AppendFormat(" >> Device Supports FFB: {0}\n", SupportsFfb);
+
             foreach (EffectInfo effect in joystick.GetEffects())
             {
                 sb.AppendFormat(" >> Effect Name: {0}\n", effect.Name);

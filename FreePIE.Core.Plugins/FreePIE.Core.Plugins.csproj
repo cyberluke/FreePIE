@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>FreePIE.Core.Plugins</RootNamespace>
     <AssemblyName>FreePIE.Core.Plugins</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -54,6 +54,9 @@
       <HintPath>..\Lib\Tobii\EyeXFramework.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="G940LedInterface">
+      <HintPath>..\Lib\Logitech\x86\G940LedInterface.dll</HintPath>
+    </Reference>
     <Reference Include="PPJoyWrapper">
       <HintPath>..\Lib\PPJoyWrapper\PPJoyWrapper.dll</HintPath>
     </Reference>
@@ -95,6 +98,7 @@
     <Compile Include="Dx\Device.cs" />
     <Compile Include="JoystickPlugin.cs" />
     <Compile Include="KeyboardPlugin.cs" />
+    <Compile Include="Logitech.cs" />
     <Compile Include="MemoryMapping\ArgumentExtension.cs" />
     <Compile Include="MemoryMapping\MappedMemory.cs" />
     <Compile Include="MemoryMapping\SharedMemoryWorker.cs" />

@@ -157,9 +157,5 @@ namespace FreePIE.Core.Plugins
             holder.RegisterFfbDevice(dev.Device);
         }
 
-        public void printDeviceInfo(JoystickGlobal dev)
-        {
-            holder.PrintDeviceInfo(dev.Device);
-        }
     }
 }

@@ -137,5 +137,29 @@ namespace FreePIE.Core.Plugins
 
         public bool supportsFfb { get { return device.SupportsFfb; } }
 
+        public void printDeviceInfo()
+        {
+            device.printSupportedEffects();
+        }
+
+        public void setG940LED(int button, LogiColor color)
+        {
+            device.setG940LED(button, color);
+        }
+
+        public void setAllG940LED(LogiColor color)
+        {
+            device.setAllG940LED(color);
+        }
+
+        public bool isG940LED(int button, LogiColor color)
+        {
+            return device.isG940LED(button, color);
+        }
+
+        public void printSupportedEffects()
+        {
+            device.printSupportedEffects();
+        }
     }
 }

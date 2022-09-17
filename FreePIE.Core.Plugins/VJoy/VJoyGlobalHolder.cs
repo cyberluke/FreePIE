@@ -94,11 +94,6 @@ namespace FreePIE.Core.Plugins.VJoy
             Joystick.ResetVJD(index);
         }
 
-        public void PrintDeviceInfo(Device device)
-        {
-            device.printSupportedEffects();
-        }
-
         public void SetButton(int button, bool pressed)
         {
             if (button >= maxButtons)
