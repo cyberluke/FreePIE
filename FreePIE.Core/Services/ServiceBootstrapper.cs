@@ -154,7 +154,7 @@ namespace FreePIE.Core.Services
             }
         }
 
-        private sealed class PathsProvider : IProvider<IPaths>
+        private sealed class PathsProvider : IProvider
         {
             private readonly IPortable portable;
             private readonly Func<PortablePaths> portablePaths;
