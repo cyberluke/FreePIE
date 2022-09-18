@@ -94,6 +94,11 @@ namespace FreePIE.Core.Plugins.VJoy
             Joystick.ResetVJD(index);
         }
 
+        public int getMaxButtons()
+        {
+            return maxButtons;
+        }
+
         public void SetButton(int button, bool pressed)
         {
             if (button >= maxButtons)

@@ -106,8 +106,11 @@ namespace FreePIE.Core.Plugins.VJoy
                     apd.action(dev, apd.convertedPacket);
             }
             catch (Exception e)
-            {
+            {                
                 Console.WriteLine("Excecption when trying to forward ffb packet {0}{1}{1}{2}", apd.packet.PacketType, Environment.NewLine, e.Message);
+#if DEBUG
+                Console.WriteLine("Source {0}{1}{1}StackTrace {2}", e.Source, Environment.NewLine, e.StackTrace);
+#endif
             }
         }
 
@@ -122,7 +125,10 @@ namespace FreePIE.Core.Plugins.VJoy
 
         public static void Dispose()
         {
-            packetMapper.Stop();
+            if (packetMapper != null)
+            {
+                packetMapper.Stop();
+            }
         }
 
         [DllImport("vJoyInterface.dll", EntryPoint = "FfbRegisterGenCB", CallingConvention = CallingConvention.Cdecl)]

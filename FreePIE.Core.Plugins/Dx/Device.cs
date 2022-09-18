@@ -248,6 +248,7 @@ namespace FreePIE.Core.Plugins.Dx
             if (type.Equals(FFBEType.ET_SPRNG))
             {
                 initializeConditionForce();
+                effectParams[blockIndex].Parameters = conditionSet;
             }
         }
 
@@ -293,14 +294,13 @@ namespace FreePIE.Core.Plugins.Dx
         {
             CheckFfbSupport("Unable to set constant force");
 
-            int lastConditionId = isY ? 0 : 1;
+            int lastConditionId = isY ? 1 : 0;
 
             if (isAxisReverse)
             {
                 //G940 is reversed here
-                lastConditionId = isY ? 1 : 0;
+                lastConditionId = isY ? 0 : 1;
             }
-
             effectParams[blockIndex].Parameters.AsConditionSet().Conditions[lastConditionId].Offset = centerPointOffset;
             effectParams[blockIndex].Parameters.AsConditionSet().Conditions[lastConditionId].DeadBand = deadBand;
             effectParams[blockIndex].Parameters.AsConditionSet().Conditions[lastConditionId].NegativeCoefficient = negCoeff;

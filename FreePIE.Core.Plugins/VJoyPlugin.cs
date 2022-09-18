@@ -76,6 +76,7 @@ namespace FreePIE.Core.Plugins
 
         public int axisMax { get { return holder.AxisMax; } }
         public int continuousPovMax { get { return VJoyGlobalHolder.ContinuousPovMax; } }
+        public int buttonsMax { get { return holder.getMaxButtons();  } }
 
         public int x
         {

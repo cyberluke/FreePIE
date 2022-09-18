@@ -62,7 +62,6 @@ namespace FreePIE.Core.Plugins.VJoy
 
         public void Stop()
         {
-            Console.WriteLine("STOPPING BACKGROUND FFB THREAD! FFB IS NOW OFF. RESTART FREEPIE.");
             stopped = true;
 
             // Because blocking queue might wait for new item blocking the thread
