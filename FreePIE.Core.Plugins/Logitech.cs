@@ -19,13 +19,13 @@ namespace FreePIE.Core.Plugins
     public class Logitech
     {
 
-        [DllImport("G940LedInterface.dll", CallingConvention = CallingConvention.StdCall, EntryPoint = "_ButtonSetColor")]
+        [DllImport("G940LedInterface.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "_ButtonSetColor")]
         public extern static ulong ButtonSetColor(IntPtr device, LogiPanelButton button, LogiColor color);
 
-        [DllImport("G940LedInterface.dll", CallingConvention = CallingConvention.StdCall, EntryPoint = "_SetAllButtonsColor")]
+        [DllImport("G940LedInterface.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "_SetAllButtonsColor")]
         public extern static ulong SetAllButtonsColor(IntPtr device, LogiColor color);
 
-        [DllImport("G940LedInterface.dll", CallingConvention = CallingConvention.StdCall, EntryPoint = "_IsButtonColor")]
+        [DllImport("G940LedInterface.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "_IsButtonColor")]
         public extern static bool IsButtonColor(IntPtr device, LogiPanelButton button, LogiColor color);
 
     }
