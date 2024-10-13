@@ -1,5 +1,15 @@
-FreePIE
-=======
+Youtube video with Logitech G920 working with Force Feedback (FFB): https://www.youtube.com/watch?v=pIR5bgpmE7E
+
+Logitech G920 FreePIE script: https://gist.github.com/cyberluke/5ad828d52a3726dc9bf8fcc36ca17c17
+
+- Requires latest VJoy driver from this fork: https://github.com/njz3/vJoy/
+- Fixed SlimDX Ramp Effect
+- All effects working & tested on Novalogic Flight simulators and Logitech G940
+- Added Logitech G940 LED interface
+- Tested on Windows 10
+
+FreePIE with extended API & FFB fixed 
+=====================================
 
 Programmable Input Emulator
  
