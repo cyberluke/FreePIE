@@ -8,6 +8,9 @@ Logitech G920 FreePIE script: https://gist.github.com/cyberluke/5ad828d52a3726dc
 - Added Logitech G940 LED interface
 - Tested on Windows 10
 
+**Important info if GUI won't appear**:
+  When downloading ZIP in Windows from website, it will lock the dlls and you need to right click them -> Properties -> and there is "Unblock this dll" checkbox. I don't know why Windows keeps doing it.
+
 FreePIE with extended API & FFB fixed 
 =====================================
 
